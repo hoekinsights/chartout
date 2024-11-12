@@ -43,8 +43,8 @@ Procedure:
 1. Retrieve the available products from the Chartout Store.
 2. Assign your vizualization to a product of interest.
 3. Define a Chartout Cart and add the item(s).
-4. Open the Chartout Store with your cart.
-5. Inspect the items in 3D and click the button Proceed to Checkout to safely purchase the product(s).
+4. Open the Chartout Store with your Cart and inspect the items in 3D.
+5. click the button Proceed to Checkout to safely purchase the product(s).
 
 products = chartout.available_products()
 
