@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw
 
 
-def altair_chart_to_texture(chart, product="403-11oz-color-mug"):
+def chart_to_texture(chart, product="403-11oz-color-mug"):
     # save chart
     chart.save("chart.png", scale_factor=1.5)
 
