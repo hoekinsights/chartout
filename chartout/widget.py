@@ -1,4 +1,4 @@
-from typing import Any, TypedDict, List, Optional, Union
+from typing import TypedDict, Optional, List
 import anywidget
 import traitlets
 import pathlib
@@ -19,38 +19,44 @@ class ActiveItem(TypedDict):
 
 
 class Store(anywidget.AnyWidget):
-    # _esm = "https://chartout.io/bundle/Widget.js"
-    # _css = "https://chartout.io/bundle/styles.css"
 
+    # Paths for JavaScript and CSS
     _esm = pathlib.Path("../chartout-app/bundle/Widget.js")
     _css = pathlib.Path("../chartout-app/bundle/styles.css")
 
-    value = traitlets.Int(0).tag(sync=True)
+    # Traitlets
     cart = traitlets.List(
-        traitlets.Dict(
-            key_trait=traitlets.Unicode(),
-            value_trait=traitlets.Union([
-                traitlets.Unicode(),  # For 'name', 'code', 'image'
-                traitlets.Int()       # For 'quantity'
-            ])
+        trait=traitlets.Dict(
+            key_trait=traitlets.Unicode(),  # Key names must be strings
+            value_trait=traitlets.Union(  # Value type enforcement for CartItem structure
+                [
+                    traitlets.Unicode(),  # For 'name', 'code', 'image'
+                    traitlets.Int(),  # For 'quantity'
+                ]
+            ),
         ),
-        allow_none=True,  # Allow this traitlet to be None
-        default_value=None  # Default to None to indicate it's optional
+        allow_none=True,  # Allow the cart to be None
+        default_value=None,
     ).tag(sync=True)
 
-    active = traitlets.Union([
-        traitlets.Dict(
-            key_trait=traitlets.Unicode(),
-            value_trait=traitlets.Union([
-                traitlets.Unicode(),  # For 'name', 'code', 'image'
-                traitlets.Unicode(),  # For 'texture'
-            ])
+    active = traitlets.Dict(
+        key_trait=traitlets.Unicode(),
+        value_trait=traitlets.Union(
+            [
+                traitlets.Unicode(),  # For 'name', 'code', 'image', 'texture'
+            ]
         ),
-        traitlets.Any()  # Allow None as a valid value
-    ]).tag(sync=True)
+        allow_none=True,  # Allows `None` in addition to the dictionary
+    ).tag(sync=True)
 
-    # Optionally, you can add type hints for the traitlets
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.cart: Optional[List[CartItem]] = None
-        self.active: Optional[ActiveItem] = None
+        # Explicit type annotations for internal state
+        self.cart: Optional[List[CartItem]] = None  # Allow `None` for the cart
+        self.active: Optional[ActiveItem] = None  # Allow `None` for the active item
+
+    def to_json(self):
+        """Serialize the widget's state to a JSON-compatible dictionary."""
+        return {"cart": self.cart, "active": self.active}
+
+    # Additional methods and logic here

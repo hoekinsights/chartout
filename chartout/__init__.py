@@ -1,7 +1,15 @@
 __version__ = "0.0.1dev"
 
+from .dependencies import is_altair_chart
 from .develop import altair_heatmap
-from .texture import chart_to_texture
+from .texture import chart_to_texture, Position, ProductConfig
 from .widget import Store
 
-__all__ = ["chart_to_texture", "altair_heatmap", "Store"]
+__all__ = [
+    "is_altair_chart",
+    "altair_heatmap",
+    "chart_to_texture",
+    "Position",
+    "ProductConfig",
+    "Store",
+]
