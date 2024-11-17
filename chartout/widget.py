@@ -60,3 +60,54 @@ class Store(anywidget.AnyWidget):
         return {"cart": self.cart, "active": self.active}
 
     # Additional methods and logic here
+
+
+class Cart:
+    def __init__(self):
+        self.items: List[CartItem] = []  # Initialize an empty list of CartItem
+
+    def add(self, /, item: CartItem) -> None:
+        """
+        Add a CartItem to the cart.
+
+        Args:
+            item (CartItem): A dictionary conforming to the CartItem structure.
+                             Must contain 'name', 'code', 'image', and 'quantity'.
+        
+        Raises:
+            ValueError: If the item does not conform to the CartItem structure.
+        """
+        # Validate the TypedDict structure 
+        # TODO: implement this, but run currently into this error:
+        # TypeError: TypedDict does not support instance and class checks
+
+        # if not isinstance(item, CartItem):
+        #     raise ValueError("Item must conform to the CartItem structure.")
+        
+        # For now, validate the item structure
+        required_keys = {'name', 'code', 'image', 'quantity'}
+        if not isinstance(item, dict) or not required_keys.issubset(item.keys()):
+            raise ValueError("Item must be a dictionary with keys: 'name', 'code', 'image', and 'quantity'.")
+
+
+        if not isinstance(item['quantity'], int) or item['quantity'] < 0:
+            raise ValueError("Quantity must be a non-negative integer.")
+
+        self.items.append(item)
+
+    def remove(self, *, index: int) -> None:
+        """Remove a CartItem from the cart by its index."""
+        if index < 0 or index >= len(self.items):
+            raise IndexError("Index out of range.")
+        del self.items[index]
+
+    def items(self) -> List[CartItem]:
+        """Return the list of CartItems in the cart."""
+        return self.items
+
+    def __repr__(self) -> str:
+        """Return a string representation of the Cart."""
+        if not self.items:
+            return "Cart(empty)"
+        items_repr = ', '.join(f"{item['name']} (Code: {item['code']}, Quantity: {item['quantity']})" for item in self.items)
+        return f"Cart([{items_repr}])"
