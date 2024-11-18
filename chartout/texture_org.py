@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw
 import io
 from typing import Any
-from .dependencies import is_altair_chart
+from .support import is_altair_chart
 
 
 def chart_to_png(chart: Any) -> bytes:
