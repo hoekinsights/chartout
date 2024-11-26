@@ -1,45 +1,16 @@
-import sys
-
-if sys.version_info >= (3, 14):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
-from typing import Any
+from typing import Any, Dict
 from PIL import Image, ImageDraw
 import io
 from .support import is_altair_chart
+from .models import Position, ProductConfig  # Import the dataclasses
 
-
-class Position(TypedDict):
-    width: int
-    height: int
-    top: int
-    left: int
-
-
-class ProductConfig(TypedDict):
-    area_width: int
-    area_height: int
-    limit_to_print_area: bool
-
-
-product_configs: dict[str, ProductConfig] = {
-    "403-11oz-color-mug": {
-        "area_width": 1342,
-        "area_height": 1342,
-        "limit_to_print_area": True,
-    },
-    "3-12x12-canvas": {
-        "area_width": 1200,
-        "area_height": 1200,
-        "limit_to_print_area": True,
-    },
+product_configs: Dict[str, ProductConfig] = {
+    "403-11oz-color-mug": ProductConfig(area_width=1342, area_height=1342, limit_to_print_area=True),
+    "3-12x12-canvas": ProductConfig(area_width=1200, area_height=1200, limit_to_print_area=True),
     # Add more products here as needed
 }
 
-
 def chart_to_png(chart: Any) -> bytes:
-
     # altair chart
     if is_altair_chart(chart):
         byte_stream = io.BytesIO()
@@ -49,7 +20,6 @@ def chart_to_png(chart: Any) -> bytes:
     else:
         msg = f"The provided DataViz object is not supported. Got: {type(chart)}"
         raise TypeError(msg)
-
 
 def png_to_texture(
     *, png_data: bytes, product="403-11oz-color-mug", position: Position
@@ -63,12 +33,12 @@ def png_to_texture(
 
     # Create the base image using the area dimensions from the product configuration
     img = Image.new(
-        "RGB", (config["area_width"], config["area_height"]), (255, 255, 255)
+        "RGB", (config.area_width, config.area_height), (255, 255, 255)
     )
 
     # Draw a black rectangle in the specified area if limit_to_print_area is true
     draw = ImageDraw.Draw(img)
-    if config["limit_to_print_area"]:
+    if config.limit_to_print_area:
         draw.rectangle(
             [
                 position["left"],
@@ -94,7 +64,6 @@ def png_to_texture(
     img.save(output_stream, format="PNG")
     output_stream.seek(0)  # Move to the beginning of the stream
     return output_stream.getvalue()  # Return the byte content of the final image
-
 
 def chart_to_texture(
     chart: Any, *, product="403-11oz-color-mug", position: Position

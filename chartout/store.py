@@ -3,13 +3,12 @@ import pathlib
 import urllib.request
 
 import anywidget 
-import msgspec
 import traitlets
 
 from typing import Any, Dict, Optional, Union
 
 from .cart import Cart
-from .models import ActiveItemStruct, InitItemStruct
+from .models import ActiveItem, InitItem, CartItem
 from .support import VizLike
 
 def customizables(category: str) -> Any:
@@ -76,17 +75,17 @@ class Store(anywidget.AnyWidget):
         """
         super().__init__(**kwargs)
         if isinstance(item, Cart):
-            self.cart: Optional[Cart] = item  # Initialize cart
-            self.active = self.cart[0] if self.cart else None  # Set active to first item in cart
-            self.init = self.cart[0] if self.cart else None  # Set init to first item in cart
+            self.cart = item  # Initialize cart
+            self.active = self.cart.items[0] if self.cart.items else None  # Set active to first item in cart
+            self.init = self.cart.items[0] if self.cart.items else None  # Set init to first item in cart
         elif isinstance(item, VizLike):
-            self.active: Optional[ActiveItemStruct] = item  # Set active to the VizLike item
-            self.init: Optional[InitItemStruct] = item  # Set init to the VizLike item
-            self.cart: Optional[Cart] = None  # No cart if viz is provided
+            self.active = item  # Set active to the VizLike item
+            self.init = item  # Set init to the VizLike item
+            self.cart = None  # No cart if viz is provided
         else:
-            self.cart: Optional[Cart] = None
-            self.active: Optional[ActiveItemStruct] = None
-            self.init: Optional[InitItemStruct] = None
+            self.cart = Cart()
+            self.active = None
+            self.init = None
 
     def to_json(self):
         """Serialize the widget's state to a JSON-compatible dictionary.
@@ -96,9 +95,9 @@ class Store(anywidget.AnyWidget):
             including the cart, active item, and initial state.
         """
         return {
-            "cart": self.cart.to_json() if self.cart else None,
-            "active": msgspec.encode(self.active) if self.active else None,
-            "init": msgspec.encode(self.init) if self.init else None,
+            "cart": [item.__dict__ for item in self.cart.items] if self.cart else None,
+            "active": self.active.__dict__ if self.active else None,
+            "init": self.init.__dict__ if self.init else None,
         }
 
     def from_json(self, data: Dict[str, Any]):
@@ -113,8 +112,8 @@ class Store(anywidget.AnyWidget):
         """
         if "cart" in data:
             self.cart = Cart()  # Initialize a new Cart instance
-            self.cart.from_json(data["cart"])  # Populate the cart from JSON
+            self.cart.items = [CartItem(**item) for item in data["cart"]]
         if "active" in data:
-            self.active = msgspec.decode(ActiveItemStruct, data["active"])
+            self.active = ActiveItem(**data["active"])
         if "init" in data:
-            self.init = msgspec.decode(InitItemStruct, data["init"])
+            self.init = InitItem(**data["init"])
