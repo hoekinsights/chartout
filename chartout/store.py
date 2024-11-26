@@ -75,15 +75,15 @@ class Store(anywidget.AnyWidget):
         """
         super().__init__(**kwargs)
         if isinstance(item, Cart):
-            self.cart = item  # Initialize cart
-            self.active = self.cart.items[0] if self.cart.items else None  # Set active to first item in cart
-            self.init = self.cart.items[0] if self.cart.items else None  # Set init to first item in cart
+            self.cart = [i.__dict__ for i in item.items]
+            self.active = item.items[0].__dict__ if item.items else None  # Set active to first item in cart
+            self.init = item.items[0].__dict__ if item.items else None  # Set init to first item in cart
         elif isinstance(item, VizLike):
             self.active = item  # Set active to the VizLike item
             self.init = item  # Set init to the VizLike item
             self.cart = None  # No cart if viz is provided
         else:
-            self.cart = Cart()
+            self.cart = Cart().items
             self.active = None
             self.init = None
 
