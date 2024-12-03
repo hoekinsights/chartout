@@ -1,7 +1,6 @@
 from typing import Any, Dict
 from PIL import Image, ImageDraw
 import io
-from .support import is_altair_chart
 from .models import Position, ProductConfig  # Import the dataclasses
 
 product_configs: Dict[str, ProductConfig] = {
@@ -11,7 +10,9 @@ product_configs: Dict[str, ProductConfig] = {
 }
 
 def chart_to_png(chart: Any) -> bytes:
-    # altair chart
+    """Convert an Altair chart to PNG byte data."""
+    from .support import is_altair_chart  # Move import here to avoid circular import
+
     if is_altair_chart(chart):
         byte_stream = io.BytesIO()
         chart.save(byte_stream, format="png", scale_factor=1.5)
@@ -25,7 +26,6 @@ def png_to_texture(
     *, png_data: bytes, product="403-11oz-color-mug", position: Position
 ) -> bytes:
     """Create a texture image from PNG byte data based on the product type and dynamic position."""
-
     # Get the configuration for the specified product
     config = product_configs.get(product)
     if not config:

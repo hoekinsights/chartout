@@ -6,6 +6,7 @@ from .texture import chart_to_texture
 from .models import CartItem, StoreItem, Position
 from .store import customizables, Store
 from .cart import Cart
+from .support import VizLike, viz_to_active_item, viz_to_texture
 
 __all__ = [
     "is_altair_chart",
@@ -17,4 +18,7 @@ __all__ = [
     "CartItem",
     "StoreItem",
     "Cart",
+    "VizLike",
+    "viz_to_active_item",
+    "viz_to_texture",
 ]

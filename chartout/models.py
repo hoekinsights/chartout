@@ -21,9 +21,12 @@ class Position:
     left: int
 
 @dataclass
+class ActiveTexture:
+    texture_data: bytes  # PNG byte stream
+
+@dataclass
 class ActiveItem(StoreItem):
     position: Optional[Position] = None
-    texture: Optional[str] = None
 
 @dataclass
 class InitItem(StoreItem):

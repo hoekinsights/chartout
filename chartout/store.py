@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, Union
 
 from .cart import Cart
 from .models import ActiveItem, InitItem, CartItem
-from .support import VizLike
+from .support import VizLike, is_viz_like, viz_to_active_item, viz_to_texture
 
 def customizables(category: str) -> Any:
     """Retrieve a JSON object from the Chartout API for customizables based on category.
@@ -56,13 +56,17 @@ class Store(anywidget.AnyWidget):
         default_value=None,
     ).tag(sync=True)
 
-    active = traitlets.Dict(
+    active_item = traitlets.Dict(
         key_trait=traitlets.Unicode(), value_trait=traitlets.Any(), allow_none=True
-    ).tag(sync=True, read_only=True)
+    ).tag(sync=True)
+
+    active_texture = traitlets.Bytes(
+        allow_none=True
+    ).tag(sync=True)
 
     init = traitlets.Dict(
         key_trait=traitlets.Unicode(), value_trait=traitlets.Any(), allow_none=True
-    ).tag(sync=True, read_only=True)
+    ).tag(sync=True)
 
     def __init__(self, item: Optional[Union[Cart, VizLike]] = None, **kwargs):
         """Initialize the Store with an optional cart or a valid Altair chart.
@@ -76,16 +80,21 @@ class Store(anywidget.AnyWidget):
         super().__init__(**kwargs)
         if isinstance(item, Cart):
             self.cart = [i.__dict__ for i in item.items]
-            self.active = item.items[0].__dict__ if item.items else None  # Set active to first item in cart
-            self.init = item.items[0].__dict__ if item.items else None  # Set init to first item in cart
-        elif isinstance(item, VizLike):
-            self.active = item  # Set active to the VizLike item
-            self.init = item  # Set init to the VizLike item
+            self.active_item = item.items[0].__dict__ if item.items else None  # Set active to first item in cart
+            self.active_texture = None
+            self.init_item = item.items[0].__dict__ if item.items else None  # Set init to first item in cart
+        elif is_viz_like(item):
+            self.active_item = viz_to_active_item(item)  # Convert item to ActiveItem
+            self.active_texture = viz_to_texture(item, self.active_item)  # Convert item to texture
+            self.init_item = None  # TODO:viz_to_init_item(item)  # Convert item to ActiveItem for init
             self.cart = None  # No cart if viz is provided
+        elif item is not None:  # Check if item is neither Cart nor VizLike
+            raise TypeError("item must be of type Cart or VizLike.")
         else:
             self.cart = Cart().items
-            self.active = None
-            self.init = None
+            self.active_item = None
+            self.active_texture = None
+            self.init_item = None
 
     def to_json(self):
         """Serialize the widget's state to a JSON-compatible dictionary.
@@ -96,8 +105,8 @@ class Store(anywidget.AnyWidget):
         """
         return {
             "cart": [item.__dict__ for item in self.cart.items] if self.cart else None,
-            "active": self.active.__dict__ if self.active else None,
-            "init": self.init.__dict__ if self.init else None,
+            "active_item": self.active_item.__dict__ if self.active_item else None,
+            "init_item": self.init_item.__dict__ if self.init_item else None,
         }
 
     def from_json(self, data: Dict[str, Any]):
@@ -114,6 +123,6 @@ class Store(anywidget.AnyWidget):
             self.cart = Cart()  # Initialize a new Cart instance
             self.cart.items = [CartItem(**item) for item in data["cart"]]
         if "active" in data:
-            self.active = ActiveItem(**data["active"])
+            self.active_item = ActiveItem(**data["active"])
         if "init" in data:
-            self.init = InitItem(**data["init"])
+            self.init_item = InitItem(**data["init"])
