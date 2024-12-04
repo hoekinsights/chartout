@@ -79,19 +79,19 @@ class Store(anywidget.AnyWidget):
         """
         super().__init__(**kwargs)
         if isinstance(item, Cart):
-            self.cart = [i.__dict__ for i in item.items]
-            self.active_item = item.items[0].__dict__ if item.items else None  # Set active to first item in cart
+            self.cart = item.to_dict()['items']
+            self.active_item = self.cart[0] if len(self.cart) > 0 else None  # Set active to first item in cart
             self.active_texture = None
-            self.init_item = item.items[0].__dict__ if item.items else None  # Set init to first item in cart
+            self.init_item = self.cart[0] if len(self.cart) > 0 else None  # Set init to first item in cart
         elif is_viz_like(item):
-            self.active_item = viz_to_active_item(item).__dict__  # Convert item to ActiveItem
-            self.active_texture = viz_to_texture(item, self.active_item).__dict__  # Convert item to texture
-            self.init_item = None  # TODO:viz_to_init_item(item)  # Convert item to ActiveItem for init
-            self.cart = None  # No cart if viz is provided
+            self.active_item = viz_to_active_item(item).to_dict() # Convert item to ActiveItem
+            self.active_texture = viz_to_texture(item, self.active_item).to_dict()  # Convert item to texture
+            self.init_item = self.active_item  # TODO:viz_to_init_item(item)  # Convert item to ActiveItem for init
+            self.cart = []  # No cart if viz is provided
         elif item is not None:  # Check if item is neither Cart nor VizLike
             raise TypeError("item must be of type Cart or VizLike.")
         else:
-            self.cart = Cart().items
+            self.cart = []
             self.active_item = None
             self.active_texture = None
             self.init_item = None
@@ -104,9 +104,9 @@ class Store(anywidget.AnyWidget):
             including the cart, active item, and initial state.
         """
         return {
-            "cart": [item.__dict__ for item in self.cart.items] if self.cart else None,
-            "active_item": self.active_item.__dict__ if self.active_item else None,
-            "init_item": self.init_item.__dict__ if self.init_item else None,
+            "cart": self.cart,
+            "active_item": self.active_item,
+            "init_item": self.init_item,
         }
 
     def from_json(self, data: Dict[str, Any]):
