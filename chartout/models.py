@@ -28,6 +28,9 @@ class ActiveTexture:
 class ActiveItem(StoreItem):
     position: Optional[Position] = None
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
 @dataclass
 class InitItem(StoreItem):
     position: Optional[Position] = None

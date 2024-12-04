@@ -60,8 +60,8 @@ class Store(anywidget.AnyWidget):
         key_trait=traitlets.Unicode(), value_trait=traitlets.Any(), allow_none=True
     ).tag(sync=True)
 
-    active_texture = traitlets.Bytes(
-        allow_none=True
+    active_texture = traitlets.Dict(
+        key_trait=traitlets.Unicode(), value_trait=traitlets.Bytes(), allow_none=True
     ).tag(sync=True)
 
     init = traitlets.Dict(
@@ -84,8 +84,8 @@ class Store(anywidget.AnyWidget):
             self.active_texture = None
             self.init_item = item.items[0].__dict__ if item.items else None  # Set init to first item in cart
         elif is_viz_like(item):
-            self.active_item = viz_to_active_item(item)  # Convert item to ActiveItem
-            self.active_texture = viz_to_texture(item, self.active_item)  # Convert item to texture
+            self.active_item = viz_to_active_item(item).__dict__  # Convert item to ActiveItem
+            self.active_texture = viz_to_texture(item, self.active_item).__dict__  # Convert item to texture
             self.init_item = None  # TODO:viz_to_init_item(item)  # Convert item to ActiveItem for init
             self.cart = None  # No cart if viz is provided
         elif item is not None:  # Check if item is neither Cart nor VizLike
