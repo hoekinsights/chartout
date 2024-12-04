@@ -53,6 +53,46 @@ def chart_to_png(chart: Any) -> bytes:
         msg = f"The provided DataViz object is not supported. Got: {type(chart)}"
         raise TypeError(msg)
 
+def process_image(png_data: bytes, position: Dict[str, int]) -> Image:
+    """Process an image by resizing and transposing it.
+
+    Args:
+        png_data (bytes): The PNG byte data of the image.
+        position (Dict[str, int]): The position dictionary with width and height.
+
+    Returns:
+        Image: The processed PIL Image object.
+    """
+    chart_img = Image.open(io.BytesIO(png_data))
+    chart_img = chart_img.resize((position['width'], position['height']))
+    chart_img = chart_img.transpose(Image.FLIP_TOP_BOTTOM)
+    return chart_img
+
+def create_base_image(width: int, height: int, color: tuple = (255, 255, 255)) -> Image:
+    """Create a base image with specified dimensions and color.
+
+    Args:
+        width (int): The width of the image.
+        height (int): The height of the image.
+        color (tuple): The RGB color of the image background.
+
+    Returns:
+        Image: A PIL Image object.
+    """
+    return Image.new("RGB", (width, height), color)
+
+def draw_rectangle(image: Image, top_left: tuple, bottom_right: tuple, color: tuple = (0, 0, 0)) -> None:
+    """Draw a rectangle on the image.
+
+    Args:
+        image (Image): The image to draw on.
+        top_left (tuple): The top-left corner of the rectangle.
+        bottom_right (tuple): The bottom-right corner of the rectangle.
+        color (tuple): The RGB color of the rectangle.
+    """
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([top_left, bottom_right], fill=color)
+
 def png_to_texture(
     *, png_data: bytes, product="403-11oz-color-mug", position: Union[Position, Dict[str, int]]
 ) -> bytes:
@@ -66,29 +106,14 @@ def png_to_texture(
         raise ValueError(f"Product '{product}' is not supported yet.")
 
     # Create the base image using the area dimensions from the product configuration
-    img = Image.new(
-        "RGB", (config.area_width, config.area_height), (255, 255, 255)
-    )
+    img = create_base_image(config.area_width, config.area_height)
 
     # Draw a black rectangle in the specified area if limit_to_print_area is true
-    draw = ImageDraw.Draw(img)
     if config.limit_to_print_area:
-        draw.rectangle(
-            [
-                position['left'],  # Accessing left attribute from dict
-                position['top'],   # Accessing top attribute from dict
-                position['left'] + position['width'],  # Accessing width attribute from dict
-                position['top'] + position['height'],   # Accessing height attribute from dict
-            ],
-            fill=(0, 0, 0),
-        )
+        draw_rectangle(img, (position['left'], position['top']), (position['left'] + position['width'], position['top'] + position['height']))
 
-    # Open the chart image from the PNG byte data, resize and transpose
-    chart_img = Image.open(io.BytesIO(png_data))
-    chart_img = chart_img.resize(
-        (position['width'], position['height'])  # Accessing width and height attributes from dict
-    )  # Resize to fit the specified dimensions
-    chart_img = chart_img.transpose(Image.FLIP_TOP_BOTTOM)
+    # Process the chart image
+    chart_img = process_image(png_data, position)
 
     # Paste the chart image at the specified position
     img.paste(chart_img, (position['left'], position['top']))  # Accessing left and top attributes from dict

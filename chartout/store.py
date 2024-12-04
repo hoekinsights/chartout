@@ -20,14 +20,17 @@ def customizables(category: str) -> Any:
     Returns:
         Any: The JSON response containing customizables for the specified category.
     """
-    # TODO: Add category to the URL and provide support for categories in the backend
-    # url = f"https://chartout.io/api/v1/products/?category={category}"  # Append category to the URL
     url = "https://chartout.io/api/v1/products/"
-    with urllib.request.urlopen(url) as response:
-        if response.status != 200:
-            raise Exception(f"Error fetching data: {response.status}")
-        data = response.read()  # Read the response data
-        return json.loads(data)  # Parse and return the JSON response
+    try:
+        with urllib.request.urlopen(url) as response:
+            if response.status != 200:
+                raise Exception(f"Error fetching data: {response.status}")
+            data = response.read()
+            return json.loads(data)
+    except urllib.error.URLError as e:
+        raise ConnectionError(f"Failed to connect to {url}: {e.reason}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON response: {e.msg}")
 
 class Store(anywidget.AnyWidget):
     """A class representing a store widget for managing cart items.

@@ -1,3 +1,19 @@
+import pytest
+from chartout import chart_to_template_png, chart_to_shop
+
+def test_chart_to_template_png():
+    # Mock chart object
+    chart = ...  # Create a mock or fixture for the chart
+    result = chart_to_template_png(chart)
+    assert result.endswith(".png")
+
+def test_chart_to_shop():
+    # Mock chart object
+    chart = ...  # Create a mock or fixture for the chart
+    page = chart_to_shop(chart)
+    assert page is not None
+
+
 '''
 import solara
 import pyvista as pv
