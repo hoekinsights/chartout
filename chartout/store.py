@@ -11,7 +11,7 @@ from .cart import Cart
 from .models import ActiveItem, InitItem, CartItem
 from .support import VizLike, is_viz_like, viz_to_active_item, viz_to_texture
 
-def customizables(category: str) -> Any:
+def customizables(debug: bool = False) -> Any:
     """Retrieve a JSON object from the Chartout API for customizables based on category.
 
     Args:
@@ -20,7 +20,10 @@ def customizables(category: str) -> Any:
     Returns:
         Any: The JSON response containing customizables for the specified category.
     """
-    url = "https://chartout.io/api/v1/products/"
+    if debug:
+        url = "http://127.0.0.1:8000/static/products.json"
+    else:
+        url = "https://chartout.io/api/v1/products/"
     try:
         with urllib.request.urlopen(url) as response:
             if response.status != 200:

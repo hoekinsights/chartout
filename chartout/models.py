@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict
 
 @dataclass
 class StoreItem:
@@ -53,21 +53,6 @@ class ActiveItem(StoreItem):
 class InitItem(StoreItem):
     position: Optional[Position] = None
     texture: Optional[str] = None
-
-    def to_dict(self):
-        return asdict(self)
-
-@dataclass
-class ProductConfig:
-    area_width: int
-    area_height: int
-    limit_to_print_area: bool
-    limit_top_left: Tuple[int, int]
-    limit_bottom_right: Tuple[int, int]
-    align_center: Tuple[int, int]
-    align_left: Tuple[int, int]
-    align_right: Tuple[int, int]
-    target_height: int
 
     def to_dict(self):
         return asdict(self)

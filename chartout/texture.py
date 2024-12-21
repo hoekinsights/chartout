@@ -1,33 +1,9 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, List
 from PIL import Image, ImageDraw
 import io
-from .models import Position, ProductConfig  # Import the dataclasses
-
-product_configs: Dict[str, ProductConfig] = {
-    "403-11oz-color-mug": ProductConfig(
-        area_width=1342,
-        area_height=1342,
-        limit_to_print_area=True,
-        limit_top_left=(0, 671),
-        limit_bottom_right=(670, 1342),
-        align_center=(167, 671),
-        align_left=(0, 671),
-        align_right=(335, 671),
-        target_height=670
-    ),
-    "3-12x12-canvas": ProductConfig(
-        area_width=1200,
-        area_height=1200,
-        limit_to_print_area=True,
-        limit_top_left=(0, 0),
-        limit_bottom_right=(600, 600),
-        align_center=(300, 600),
-        align_left=(0, 600),
-        align_right=(600, 600),
-        target_height=600
-    ),
-    # Add more products here as needed
-}
+from .models import Position
+from .store import customizables
+from .support import is_viz_like
 
 
 def validate_position(position: Union[Position, Dict[str, int]]) -> Position:
@@ -69,132 +45,181 @@ def chart_to_png(chart: Any) -> bytes:
     if is_altair_chart(chart):
         byte_stream = io.BytesIO()
         chart.save(byte_stream, format="png", scale_factor=1.5)
-        byte_stream.seek(0)  # Move to the beginning of the stream
-        return byte_stream.getvalue()  # Return the byte content of the PNG
+        byte_stream.seek(0)
+        return byte_stream.getvalue()
     else:
         msg = f"The provided DataViz object is not supported. Got: {type(chart)}"
         raise TypeError(msg)
 
 
-def process_image(png_data: bytes, position: Dict[str, int], product_config: ProductConfig) -> Image:
-    """Process an image by resizing while maintaining aspect ratio and transposing it.
+def process_image_for_source_size(img, source_size):
+    """Resize image to fit within source_size while maintaining aspect ratio and alignment."""
+    orig_width, orig_height = img.size
+    aspect_ratio = orig_width / orig_height
 
-    Args:
-        png_data (bytes): The PNG byte data of the image.
-        position (Dict[str, int]): The position dictionary (not used for resizing).
-        product_config (ProductConfig): The product configuration.
-
-    Returns:
-        Image: The processed PIL Image object.
-    """
-    chart_img = Image.open(io.BytesIO(png_data))
-    
-    # Get original aspect ratio
-    original_width, original_height = chart_img.size
-    aspect_ratio = original_width / original_height
-
-    # Use target height from product config
-    target_height = product_config.target_height
-    # Calculate width based on aspect ratio
-    target_width = int((target_height * aspect_ratio) / 2)
-    
-    # Resize maintaining aspect ratio
-    chart_img = chart_img.resize((target_width, target_height))
-    chart_img = chart_img.transpose(Image.FLIP_TOP_BOTTOM)
-    return chart_img
-
-
-def create_base_image(width: int, height: int, color: tuple = (255, 255, 255)) -> Image:
-    """Create a base image with specified dimensions and color.
-
-    Args:
-        width (int): The width of the image.
-        height (int): The height of the image.
-        color (tuple): The RGB color of the image background.
-
-    Returns:
-        Image: A PIL Image object.
-    """
-    return Image.new("RGB", (width, height), color)
-
-
-def draw_rectangle(
-    image: Image, top_left: tuple, bottom_right: tuple, color: tuple = (0, 0, 0)
-) -> None:
-    """Draw a rectangle on the image.
-
-    Args:
-        image (Image): The image to draw on.
-        top_left (tuple): The top-left corner of the rectangle.
-        bottom_right (tuple): The bottom-right corner of the rectangle.
-        color (tuple): The RGB color of the rectangle.
-    """
-    draw = ImageDraw.Draw(image)
-    draw.rectangle([top_left, bottom_right], fill=color)
-
-
-def png_to_texture(
-    *,
-    png_data: bytes,
-    product="403-11oz-color-mug",
-    position: Union[Position, Dict[str, int]],
-    alignment: str = "center"
-) -> bytes:
-    """Create a texture image from PNG byte data based on the product type and dynamic position."""
-    # Validate alignment
-    if alignment not in ["left", "center", "right"]:
-        raise ValueError("Alignment must be one of: left, center, right")
-
-    # Validate and convert position input
-    position = validate_position(position)
-
-    # Get the configuration for the specified product
-    config = product_configs.get(product)
-    if not config:
-        raise ValueError(f"Product '{product}' is not supported yet.")
-
-    # Create the base image using the area dimensions
-    img = create_base_image(config.area_width, config.area_height)
-
-    # Draw a black rectangle in the specified area if limit_to_print_area is true
-    #if config.limit_to_print_area:
-    #    draw_rectangle(img, config.limit_top_left, config.limit_bottom_right)
-
-    # Process the chart image with product config
-    chart_img = process_image(png_data, position, config)
-    chart_width = chart_img.size[0]  # Get the actual width of the processed chart
-
-    # Get alignment position from config
-    align_pos = getattr(config, f"align_{alignment}")
-    if alignment == "center":
-        # Calculate x position to center the chart within the print area
-        print_area_width = config.limit_bottom_right[0] - config.limit_top_left[0]
-        center_x = config.limit_top_left[0] + (print_area_width - chart_width) // 2
-        paste_position = (center_x, align_pos[1])
+    # Determine new dimensions while maintaining aspect ratio
+    if source_size["width"] / aspect_ratio <= source_size["height"]:
+        new_width = source_size["width"]
+        new_height = int(new_width / aspect_ratio)
     else:
-        paste_position = (align_pos[0], align_pos[1])
+        new_height = source_size["height"]
+        new_width = int(new_height * aspect_ratio)
 
-    # Paste the chart image at the aligned position
-    img.paste(chart_img, paste_position)
+    resized_img = img.resize((new_width, new_height))
 
-    # Save the final image
-    output_stream = io.BytesIO()
-    img.save(output_stream, format="PNG")
-    output_stream.seek(0)
-    return output_stream.getvalue()
-
-
-def chart_to_texture(
-    chart: Any,
-    *,
-    product="403-11oz-color-mug",
-    position: Union[Position, Dict[str, int]],
-    alignment: str = "center"
-) -> bytes:
-    """Create a texture image from a chart."""
-    return png_to_texture(
-        png_data=chart_to_png(chart),
-        product=product,
-        position=position,
-        alignment=alignment
+    # Create a new canvas for the source size
+    source_canvas = Image.new(
+        "RGB", (source_size["width"], source_size["height"]), (255, 255, 255)
     )
+
+    # Determine alignment
+    alignment = source_size.get(
+        "alignment", {"horizontal": "center", "vertical": "middle"}
+    )
+    if alignment["horizontal"] == "left":
+        x_pos = 0
+    elif alignment["horizontal"] == "right":
+        x_pos = source_size["width"] - new_width
+    else:  # center
+        x_pos = (source_size["width"] - new_width) // 2
+
+    if alignment["vertical"] == "top":
+        y_pos = 0
+    elif alignment["vertical"] == "bottom":
+        y_pos = source_size["height"] - new_height
+    else:  # middle
+        y_pos = (source_size["height"] - new_height) // 2
+
+    # Paste the resized image onto the source canvas
+    source_canvas.paste(resized_img, (x_pos, y_pos))
+    return source_canvas
+
+
+def position_image_on_canvas(resized_img, canvas_position, user_modifications):
+    """Position the resized image on the canvas using user modifications."""
+    # Scale to fit within canvas_position
+    scale_width = canvas_position["width"] / resized_img.width
+    scale_height = canvas_position["height"] / resized_img.height
+    scale = min(scale_width, scale_height)
+
+    final_width = int(resized_img.width * scale)
+    final_height = int(resized_img.height * scale)
+    final_img = resized_img.resize(
+        (canvas_position["width"], canvas_position["height"])
+    )
+
+    # Create a tile canvas
+    tile_canvas = Image.new(
+        "RGB", (canvas_position["width"], canvas_position["height"]), (255, 255, 255)
+    )
+
+    # Determine alignment
+    alignment = user_modifications.get(
+        "alignment", {"horizontal": "center", "vertical": "middle"}
+    )
+    if alignment["horizontal"] == "left":
+        x_pos = 0
+    elif alignment["horizontal"] == "right":
+        x_pos = canvas_position["width"] - final_width
+    else:  # center
+        x_pos = (canvas_position["width"] - final_width) // 2
+
+    if alignment["vertical"] == "top":
+        y_pos = 0
+    elif alignment["vertical"] == "bottom":
+        y_pos = canvas_position["height"] - final_height
+    else:  # middle
+        y_pos = (canvas_position["height"] - final_height) // 2
+
+    tile_canvas.paste(final_img, (x_pos, y_pos))
+    return tile_canvas
+
+
+def create_tiled_image(variant):
+    # Create a blank canvas
+    canvas_size = variant["canvas_size"]
+    canvas = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
+
+    for texture in variant["textures"]:
+        if texture["type"] == "image":
+
+            try:
+                # Check if content is a byte stream
+                if isinstance(texture["content"], bytes):
+                    img = Image.open(io.BytesIO(texture["content"]))
+                else:
+                    # Assume content is a file path
+                    img = Image.open(texture["content"])
+
+                # Ensure the image is loaded
+                img.load()
+            except Exception as e:
+                print(f"Error loading image for texture ID {texture['id']}: {e}")
+                continue
+
+            # Process image for source size
+            resized_img = process_image_for_source_size(img, texture["source_size"])
+
+            # Apply user modifications and position on canvas
+            user_modifications = texture.get("user_modifications", {})
+            tile_canvas = position_image_on_canvas(
+                resized_img, texture["canvas_position"], user_modifications
+            )
+
+            # Calculate position on the main canvas
+            x = texture["canvas_position"]["x"]
+            y = texture["canvas_position"]["y"]
+
+            # Paste the processed image onto the main canvas
+            canvas.paste(tile_canvas, (x, y))
+
+        elif texture["type"] == "color":
+            # Create a colored rectangle
+            color = texture["content"]
+            x = texture["canvas_position"]["x"]
+            y = texture["canvas_position"]["y"]
+            width = texture["canvas_position"]["width"]
+            height = texture["canvas_position"]["height"]
+            draw = ImageDraw.Draw(canvas)
+            draw.rectangle([x, y, x + width, y + height], fill=color)
+
+    # Flip the image
+    canvas = canvas.transpose(Image.FLIP_TOP_BOTTOM)
+    # Save or display the image
+    output = io.BytesIO()
+    canvas.save(output, format="PNG")
+    output.seek(0)
+    return output.getvalue()
+
+
+def charts_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
+    """Create texture data image using the given variant ID and textures."""
+    # Retrieve product configurations from the API
+    products_json = customizables(debug=True)
+    my_variant = next(
+        (v for v in products_json["variants"] if v["id"] == id_variant), None
+    )
+
+    if not my_variant:
+        raise ValueError(f"Variant with ID {id_variant} not found in variants.")
+
+    # Update the variant's textures with the provided textures
+    for texture in textures:
+        for variant_texture in my_variant["textures"]:
+            if variant_texture["id"] == texture["id"]:
+                if variant_texture["type"] == "image" and is_viz_like(
+                    texture["content"]
+                ):
+                    # Convert chart to PNG if content is a chart
+                    variant_texture["content"] = chart_to_png(texture["content"])
+                else:
+                    # Directly assign content for non-chart textures
+                    variant_texture["content"] = texture["content"]
+                # Update other properties if needed
+                variant_texture["user_modifications"] = texture.get(
+                    "user_modifications", variant_texture.get("user_modifications", {})
+                )
+
+    # Create the tiled image using the updated variant
+    texture_data = create_tiled_image(my_variant)
+    return texture_data
