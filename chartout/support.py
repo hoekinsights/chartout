@@ -43,7 +43,7 @@ def viz_to_active_item(viz: Any) -> ActiveItem:
 
 def viz_to_texture(viz: Any, active_item: Dict[str, Any]) -> Optional[ActiveTexture]:
     """Convert a VizLike item to its texture representation as an ActiveTexture."""
-    from .texture import chart_to_texture  # Move import here to avoid circular import
+    from .texture import variant_to_texture  # Move import here to avoid circular import
 
     # Get product name and position from ActiveItem
     product_name = active_item['name']
@@ -52,7 +52,7 @@ def viz_to_texture(viz: Any, active_item: Dict[str, Any]) -> Optional[ActiveText
     # Ensure position is defined before calling chart_to_texture
     if position is not None:
         # Call chart_to_texture with the chart and position
-        png_data = chart_to_texture(viz, product=product_name, position=position)
+        png_data = variant_to_texture(viz, product=product_name, position=position)
         return ActiveTexture(texture=png_data)  # Create ActiveTexture instance with PNG data
 
     return None  # Return None if position is not defined

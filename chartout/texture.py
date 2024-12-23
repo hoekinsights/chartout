@@ -192,7 +192,7 @@ def create_tiled_image(variant):
     return output.getvalue()
 
 
-def charts_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
+def variant_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
     """Create texture data image using the given variant ID and textures."""
     # Retrieve product configurations from the API
     products_json = customizables(debug=True)
