@@ -4,6 +4,7 @@ import urllib.request
 
 import anywidget 
 import traitlets
+from traitlets import TraitType
 
 from typing import Any, Dict, Optional, Union
 
@@ -21,7 +22,7 @@ def customizables(debug: bool = False) -> Any:
         Any: The JSON response containing customizables for the specified category.
     """
     if debug:
-        url = "http://127.0.0.1:8000/static/products.json"
+        url = "http://127.0.0.1:8000/api/v1/products/"
     else:
         url = "https://chartout.io/api/v1/products/"
     try:
@@ -34,6 +35,17 @@ def customizables(debug: bool = False) -> Any:
         raise ConnectionError(f"Failed to connect to {url}: {e.reason}")
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse JSON response: {e.msg}")
+
+class MemoryViewTrait(TraitType):
+    """A trait type that accepts memoryview objects and converts them to bytes."""
+    
+    def validate(self, obj, value):
+        if isinstance(value, memoryview):
+            return bytes(value)
+        elif isinstance(value, (bytes, bytearray)):
+            return value
+        else:
+            self.error(obj, value)
 
 class Store(anywidget.AnyWidget):
     """A class representing a store widget for managing cart items.
@@ -67,8 +79,8 @@ class Store(anywidget.AnyWidget):
     ).tag(sync=True)
 
     active_texture = traitlets.Dict(
-        key_trait=traitlets.Unicode(), value_trait=traitlets.Bytes(), allow_none=True
-    ).tag(sync=True)
+        key_trait=traitlets.Unicode(), value_trait=MemoryViewTrait(), allow_none=True, default_value=None, read_only=False
+    ).tag(sync=True)    
 
     init = traitlets.Dict(
         key_trait=traitlets.Unicode(), value_trait=traitlets.Any(), allow_none=True
@@ -84,14 +96,13 @@ class Store(anywidget.AnyWidget):
                 class constructor.
         """
         super().__init__(**kwargs)
+        self.active_texture = None
         if isinstance(item, Cart):
             self.cart = item.to_dict()['items']
             self.active_item = self.cart[0] if len(self.cart) > 0 else None  # Set active to first item in cart
-            self.active_texture = None
             self.init_item = self.cart[0] if len(self.cart) > 0 else None  # Set init to first item in cart
         elif is_viz_like(item):
             self.active_item = viz_to_active_item(item).to_dict() # Convert item to ActiveItem
-            self.active_texture = viz_to_texture(item, self.active_item).to_dict()  # Convert item to texture
             self.init_item = self.active_item  # TODO:viz_to_init_item(item)  # Convert item to ActiveItem for init
             self.cart = []  # No cart if viz is provided
         elif item is not None:  # Check if item is neither Cart nor VizLike
@@ -99,7 +110,6 @@ class Store(anywidget.AnyWidget):
         else:
             self.cart = []
             self.active_item = None
-            self.active_texture = None
             self.init_item = None
 
     def to_json(self):

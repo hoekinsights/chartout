@@ -1,20 +1,53 @@
-import pytest
-from chartout import chart_to_template_png, chart_to_shop
-
-def test_chart_to_template_png():
-    # Mock chart object
-    chart = ...  # Create a mock or fixture for the chart
-    result = chart_to_template_png(chart)
-    assert result.endswith(".png")
-
-def test_chart_to_shop():
-    # Mock chart object
-    chart = ...  # Create a mock or fixture for the chart
-    page = chart_to_shop(chart)
-    assert page is not None
+from chartout.texture import process_image_for_source_size
+from PIL import Image
 
 
-'''
+# Sample product data
+sample_products = [
+    {
+        "textures": [
+            {
+                "content": "chart.png",
+                "source_size": {
+                    "width": 671,
+                    "height": 261,
+                    "alignment": {"horizontal": "center", "vertical": "top"}
+                },
+                "user_modifications": {
+                    "alignment": {"horizontal": "center", "vertical": "top"},
+                    "dx": 10,
+                    "dy": 5,
+                    "scale": 0.5
+                },
+                "canvas_position": {"x": 0, "y": 0, "width": 525, "height": 525},
+            }
+        ]
+    }
+]
+
+
+def test_process_image_for_source_size():
+    # Use the sample_products directly
+    products = sample_products
+
+    # Extract product and texture information
+    product = products[0]
+    texture = product["textures"][0]
+    content = texture["content"]
+    source_size = texture['source_size']
+    user_modifications = texture.get('user_modifications', {})
+
+    # Open the image and perform assertions
+    with Image.open(content) as img:
+        assert img.size == (433, 361)
+        assert source_size == {'width': 671, 'height': 261, 'alignment': {'horizontal': 'center', 'vertical': 'top'}}
+        processed_image = process_image_for_source_size(img, source_size, user_modifications)
+        
+        # The canvas size remains the same, but the image is scaled
+        assert processed_image.size == (671, 261)  # The canvas size remains the same
+
+
+"""
 import solara
 import pyvista as pv
 from PIL import Image, ImageDraw
@@ -125,4 +158,4 @@ def chart_to_shop(chart, product="mug"):
                     solara.Image("payment-mockup.png")
 
     return Page()
-'''
+"""

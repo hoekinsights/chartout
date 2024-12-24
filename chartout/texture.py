@@ -52,20 +52,29 @@ def chart_to_png(chart: Any) -> bytes:
         raise TypeError(msg)
 
 
-def process_image_for_source_size(img, source_size):
+def process_image_for_source_size(img, source_size, user_modifications=None):
     """Resize image to fit within source_size while maintaining aspect ratio and alignment."""
     orig_width, orig_height = img.size
     aspect_ratio = orig_width / orig_height
 
-    # Determine new dimensions while maintaining aspect ratio
+    # Determine new dimensions to fit within source_size while maintaining aspect ratio
     if source_size["width"] / aspect_ratio <= source_size["height"]:
-        new_width = source_size["width"]
-        new_height = int(new_width / aspect_ratio)
+        fit_width = source_size["width"]
+        fit_height = int(fit_width / aspect_ratio)
     else:
-        new_height = source_size["height"]
-        new_width = int(new_height * aspect_ratio)
+        fit_height = source_size["height"]
+        fit_width = int(fit_height * aspect_ratio)
 
-    resized_img = img.resize((new_width, new_height))
+    # Resize the image to fit within the source size
+    resized_img = img.resize((fit_width, fit_height))
+
+    # Apply scale modification if provided
+    scale = user_modifications.get("scale", 1.0) if user_modifications else 1.0
+    scaled_width = int(fit_width * scale)
+    scaled_height = int(fit_height * scale)
+
+    # Resize the image based on the scale
+    scaled_img = resized_img.resize((scaled_width, scaled_height))
 
     # Create a new canvas for the source size
     source_canvas = Image.new(
@@ -73,65 +82,50 @@ def process_image_for_source_size(img, source_size):
     )
 
     # Determine alignment
-    alignment = source_size.get(
-        "alignment", {"horizontal": "center", "vertical": "middle"}
+    alignment = user_modifications.get(
+        "alignment",
+        source_size.get("alignment", {"horizontal": "center", "vertical": "middle"}),
     )
+    dx = user_modifications.get("dx", 0)
+    dy = user_modifications.get("dy", 0)
+
     if alignment["horizontal"] == "left":
-        x_pos = 0
+        x_pos = 0 + dx
     elif alignment["horizontal"] == "right":
-        x_pos = source_size["width"] - new_width
+        x_pos = source_size["width"] - scaled_width + dx
     else:  # center
-        x_pos = (source_size["width"] - new_width) // 2
+        x_pos = (source_size["width"] - scaled_width) // 2 + dx
 
     if alignment["vertical"] == "top":
-        y_pos = 0
+        y_pos = 0 + dy
     elif alignment["vertical"] == "bottom":
-        y_pos = source_size["height"] - new_height
+        y_pos = source_size["height"] - scaled_height + dy
     else:  # middle
-        y_pos = (source_size["height"] - new_height) // 2
+        y_pos = (source_size["height"] - scaled_height) // 2 + dy
 
-    # Paste the resized image onto the source canvas
-    source_canvas.paste(resized_img, (x_pos, y_pos))
-    return source_canvas
+    # Paste the scaled image onto the source canvas, clipping if necessary
+    source_canvas.paste(scaled_img, (x_pos, y_pos))
+    return source_canvas, {
+        "scaled_width": scaled_width,
+        "scaled_height": scaled_height,
+        "x_pos": x_pos,
+        "y_pos": y_pos,
+    }
 
 
 def position_image_on_canvas(resized_img, canvas_position, user_modifications):
     """Position the resized image on the canvas using user modifications."""
-    # Scale to fit within canvas_position
-    scale_width = canvas_position["width"] / resized_img.width
-    scale_height = canvas_position["height"] / resized_img.height
-    scale = min(scale_width, scale_height)
-
-    final_width = int(resized_img.width * scale)
-    final_height = int(resized_img.height * scale)
-    final_img = resized_img.resize(
-        (canvas_position["width"], canvas_position["height"])
-    )
-
     # Create a tile canvas
     tile_canvas = Image.new(
         "RGB", (canvas_position["width"], canvas_position["height"]), (255, 255, 255)
     )
 
-    # Determine alignment
-    alignment = user_modifications.get(
-        "alignment", {"horizontal": "center", "vertical": "middle"}
+    final_img = resized_img.resize(
+        (canvas_position["width"], canvas_position["height"])
     )
-    if alignment["horizontal"] == "left":
-        x_pos = 0
-    elif alignment["horizontal"] == "right":
-        x_pos = canvas_position["width"] - final_width
-    else:  # center
-        x_pos = (canvas_position["width"] - final_width) // 2
 
-    if alignment["vertical"] == "top":
-        y_pos = 0
-    elif alignment["vertical"] == "bottom":
-        y_pos = canvas_position["height"] - final_height
-    else:  # middle
-        y_pos = (canvas_position["height"] - final_height) // 2
+    tile_canvas.paste(final_img, (0, 0))
 
-    tile_canvas.paste(final_img, (x_pos, y_pos))
     return tile_canvas
 
 
