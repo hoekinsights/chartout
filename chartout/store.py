@@ -64,7 +64,7 @@ class Store(anywidget.AnyWidget):
 
     # Paths for JavaScript and CSS
     _esm = pathlib.Path("../chartout-app/bundle/Widget.js")
-    _css = pathlib.Path("../chartout-app/bundle/styles.css")
+    # _css = pathlib.Path("../chartout-app/bundle/styles.css")
 
     cart = traitlets.List(
         trait=traitlets.Dict(
