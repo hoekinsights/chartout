@@ -12,7 +12,7 @@ if TYPE_CHECKING:
         from typing_extensions import TypeGuard
     import altair as alt
 
-from .models import ActiveItem, ActiveTexture, Position  # Import ActiveItem, ActiveTexture, and Position from models
+from .models import ActiveItem, ActiveTexture  # Import ActiveItem, ActiveTexture, and Position from models
 
 # Define a new type variable for VizLike
 VizLike = TypeVar('VizLike', bound=Any)
@@ -32,7 +32,7 @@ def is_viz_like(viz: Any) -> TypeGuard[VizLike]:
 def viz_to_active_item(viz: Any) -> ActiveItem:
     """Convert a VizLike item to an ActiveItem."""
     # Assuming you have a way to determine the position from the viz object
-    position = Position(width=100, height=100, top=0, left=0)  # Replace with actual logic to determine position
+    position = dict(width=100, height=100, top=0, left=0)  # Replace with actual logic to determine position
 
     return ActiveItem(
         name="403-11oz-color-mug",

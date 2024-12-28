@@ -1,41 +1,8 @@
 from typing import Any, Dict, Union, List
 from PIL import Image, ImageDraw
 import io
-from .models import Position
 from .store import customizables
 from .support import is_viz_like
-
-
-def validate_position(position: Union[Position, Dict[str, int]]) -> Position:
-    """Validate and convert position input to a Position instance.
-
-    Args:
-        position (Union[Position, Dict[str, int]]): The position input to validate.
-
-    Returns:
-        Position: A Position instance.
-
-    Raises:
-        ValueError: If the input is invalid.
-    """
-    if isinstance(position, Position):
-        return position.__dict__  # Already a Position instance
-
-    if isinstance(position, dict):
-        required_keys = {"width", "height", "top", "left"}
-        if not required_keys.issubset(position.keys()):
-            raise ValueError(f"Position dictionary must contain keys: {required_keys}")
-
-        # Validate that all values are integers
-        for key in required_keys:
-            if not isinstance(position[key], int):
-                raise ValueError(f"Position '{key}' must be an integer.")
-
-        # Create Position instance from dictionary
-        position_instance = Position(**position)  # Create Position instance
-        return position_instance.__dict__  # Return as a dictionary
-
-    raise ValueError("Position must be either a Position instance or a dictionary.")
 
 
 def chart_to_png(chart: Any) -> bytes:
