@@ -11,7 +11,7 @@ def chart_to_png(chart: Any) -> bytes:
 
     if is_altair_chart(chart):
         byte_stream = io.BytesIO()
-        chart.save(byte_stream, format="png", scale_factor=1.5)
+        chart.save(byte_stream, format="png", scale_factor=2, ppi=300)
         byte_stream.seek(0)
         return byte_stream.getvalue()
     else:

@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Union
 
 from .cart import Cart
 from .models import ActiveItem, CartItem
-from .support import VizLike, is_viz_like, viz_to_active_item, viz_to_texture
+from .support import VizLike, is_viz_like, viz_to_active_item
 
 def customizables(debug: bool = False) -> Any:
     """Retrieve a JSON object from the Chartout API for customizables based on category.
