@@ -1,6 +1,8 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, List
 from .models import CartItem
+from .support import viz_to_cart_item, VizLike
+
 
 @dataclass
 class Cart:
@@ -10,6 +12,7 @@ class Cart:
         items (List[CartItem]): A list of items in the cart, which can be
         CartItem instances.
     """
+
     items: List[CartItem]
 
     def __init__(self, items: Optional[List[CartItem]] = None):
@@ -23,23 +26,27 @@ class Cart:
         if items is not None:
             self.add(items)
 
-    def add(self, item: CartItem | List[CartItem]) -> None:
-        """Add a CartItem or a list of CartItems to the cart.
+    def add(self, item: CartItem | List[CartItem] | VizLike) -> None:
+        """Add a CartItem, a list of CartItems, or a VizLike to the cart.
 
         Args:
-            item (CartItem | List[CartItem]): A CartItem, or a list of CartItemDicts to be added to the cart.
+            item (CartItem | List[CartItem] | VizLike): A CartItem, a list of CartItems, or a VizLike to be added to the cart.
 
         Raises:
-            ValueError: If an item in the list is not a valid CartItem or CartItem.
+            ValueError: If an item in the list is not a valid CartItem or VizLike.
         """
-        if isinstance(item, list):
+        if isinstance(item, VizLike):
+            # Convert VizLike to CartItem
+            item = viz_to_cart_item(item)
+            self.items.append(item)
+        elif isinstance(item, list):
             for i in item:
                 if isinstance(i, dict):
-                    i = CartItem(**i)  # Convert dict to CartItem if necessary
+                    i = CartItem(**i)
                 self.items.append(i)
         else:
             if isinstance(item, dict):
-                item = CartItem(**item)  # Convert dict to CartItem if necessary
+                item = CartItem(**item)
             self.items.append(item)
 
     def remove(self, *, index: int) -> None:
@@ -55,20 +62,23 @@ class Cart:
             raise IndexError("Index out of range.")
         del self.items[index]
 
-    # def __repr__(self) -> str:
-    #     """Return a string representation of the Cart.
+    def __repr__(self) -> str:
+        """Return a string representation of the Cart.
 
-    #     Returns:
-    #         str: A string representation of the Cart, including item names, codes, and
-    #         quantities.
-    #     """
-    #     if not self.items:
-    #         return "Cart(empty)"
-    #     items_repr = ", ".join(
-    #         f"{item.name} (Code: {item.code}, Quantity: {item.quantity})"
-    #         for item in self.items
-    #     )
-    #     return f"Cart([{items_repr}])"
-    
+        Returns:
+            str: A string representation of the Cart, including item IDs, names, quantities, and texture information.
+        """
+        if not self.items:
+            return "Cart(empty)"
+        
+        items_repr = "\n".join(
+            f"  - ID: {item.id}\n"
+            f"    Name: {item.name or 'Unnamed'}\n"
+            f"    Quantity: {item.quantity}\n"
+            f"    Textures: [{', '.join(texture.id for texture in item.textures)}]"
+            for item in self.items
+        )
+        return f"Cart:\n{items_repr}"
+
     def to_dict(self):
         return asdict(self)
