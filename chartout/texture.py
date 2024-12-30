@@ -1,24 +1,12 @@
 from typing import Any, Dict, Union, List
-from PIL import Image, ImageDraw
 import io
+from PIL import Image, ImageDraw
+
+# Import from other modules
 from .store import customizables
-from .support import is_viz_like
+from .support import is_viz_like, chart_to_png
 
-
-def chart_to_png(chart: Any) -> bytes:
-    """Convert an Altair chart to PNG byte data."""
-    from .support import is_altair_chart  # Move import here to avoid circular import
-
-    if is_altair_chart(chart):
-        byte_stream = io.BytesIO()
-        chart.save(byte_stream, format="png", scale_factor=2, ppi=300)
-        byte_stream.seek(0)
-        return byte_stream.getvalue()
-    else:
-        msg = f"The provided DataViz object is not supported. Got: {type(chart)}"
-        raise TypeError(msg)
-
-
+# Helper Functions
 def process_image_for_source_size(img, source_size, user_modifications=None):
     """Resize image to fit within source_size while maintaining aspect ratio and alignment."""
     orig_width, orig_height = img.size
@@ -79,7 +67,6 @@ def process_image_for_source_size(img, source_size, user_modifications=None):
         "y_pos": y_pos,
     }
 
-
 def position_image_on_canvas(resized_img, canvas_position, user_modifications):
     """Position the resized image on the canvas using user modifications."""
     # Create a tile canvas
@@ -95,15 +82,15 @@ def position_image_on_canvas(resized_img, canvas_position, user_modifications):
 
     return tile_canvas
 
-
+# Main Functions
 def create_tiled_image(variant):
+    """Create a tiled image from a variant."""
     # Create a blank canvas
     canvas_size = variant["canvas_size"]
     canvas = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
 
     for texture in variant["textures"]:
         if texture["type"] == "image":
-
             try:
                 # Check if content is a byte stream
                 if isinstance(texture["content"], bytes):
@@ -151,7 +138,6 @@ def create_tiled_image(variant):
     canvas.save(output, format="PNG")
     output.seek(0)
     return output.getvalue()
-
 
 def variant_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
     """Create texture data image using the given variant ID and textures."""
