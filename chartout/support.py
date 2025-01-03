@@ -55,10 +55,10 @@ def viz_to_active_item(init_viz: InitViz) -> ActiveItem:
 
     return ActiveItem(
         name="Canvas",
-        id="my_canvas_id",
+        id="canvas_10x10",
         textures=[
             Texture(
-                id="my_canvas_texture",
+                id="canvas_10x10_texture",
                 content=png_data
             )
         ]
