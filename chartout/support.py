@@ -2,6 +2,10 @@ from __future__ import annotations
 import sys
 import io
 from typing import TYPE_CHECKING, Any, TypeVar, Optional, Dict
+import uuid
+import hashlib
+import os
+import time
 
 # Conditional imports for type checking
 if TYPE_CHECKING:
@@ -98,3 +102,23 @@ def viz_to_cart_item(viz: VizLike) -> CartItem:
         textures=[texture],
         quantity=1
     )
+
+
+def generate_external_id() -> str:
+    """Generate a unique external ID for order creation."""
+    # Generate a UUID
+    unique_id = uuid.uuid4().hex
+
+    # Get machine-specific information (e.g., hostname)
+    machine_info = os.uname().nodename
+
+    # Hash the machine information to keep it consistent and anonymized
+    machine_hash = hashlib.sha256(machine_info.encode()).hexdigest()
+
+    # Get the current timestamp
+    timestamp = int(time.time())
+
+    # Combine all parts to form the external_id
+    external_id = f"{unique_id}-{machine_hash[:8]}-{timestamp}"
+
+    return external_id
