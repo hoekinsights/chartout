@@ -125,6 +125,8 @@ texture_data = store.active_texture['texture']
 IPythonImage(texture_data, width=300)
 ```
 
+![Example Jupyter Notebook Usage](notebook.png)
+
 ## Development Workflow
 
 1. **Backend Development**:
