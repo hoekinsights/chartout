@@ -1,10 +1,40 @@
-# chartout
+# Chartout
 
 **Print Your Insights, Anytime, Anywhere**
 
 <sub><sup>With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.</sup></sub>
 
-Chartout is the Python gateway for turning your data visualizations into beautiful, printed products. This library allows you to create, customize, and purchase printed products featuring your Vega-Altair charts directly from your Jupyter notebook or other Python environments.
+Chartout is a system for turning data visualizations into beautiful, printed products. It consists of three separate repositories that work together:
+
+## Repository Structure
+
+```
+hoekinsights/
+├── chartout/           # Python package for Jupyter integration
+├── chartout-api/       # Backend API service
+└── chartout-app/       # Frontend application and widget
+```
+
+### Components
+
+1. **[chartout](https://github.com/hoekinsights/chartout)** (This Repository)
+   - The main Python package
+   - Provides Jupyter notebook integration
+   - Handles chart-to-product conversion
+   - Requires both the API and frontend to be running
+
+2. **[chartout-api](https://github.com/hoekinsights/chartout-api)**
+   - FastAPI backend service
+   - Manages products, orders, and payments
+   - Provides REST API endpoints
+   - Future: Will be deployed to Azure
+
+3. **[chartout-app](https://github.com/hoekinsights/chartout-app)**
+   - React-based frontend application
+   - Provides 3D product preview
+   - Handles product customization
+   - Serves the widget bundle
+   - Future: Will be deployed to NPM
 
 ## System Requirements
 
@@ -14,49 +44,52 @@ The chartout package requires two additional services to be running:
    - Provides REST API endpoints for product information and order processing
    - Must be running locally during development
    - Future: will be deployed to Azure in production
+   - Repository: https://github.com/hoekinsights/chartout-api
 
 2. **Frontend Application** (`chartout-app`):
    - Provides the interactive 3D product preview and customization interface
    - Must be running locally during development
    - Serves the widget bundle that is loaded by the Python package
    - Future: will be deployed to NPM in production
+   - Repository: https://github.com/hoekinsights/chartout-app
 
-## Installation
+## Development Setup
 
-### Using Pixi (Recommended)
+To set up the complete development environment:
 
-The recommended way to install and develop chartout is using Pixi:
+1. **Create a directory and clone all repositories**:
+   ```bash
+   # Create a new directory
+   mkdir hoekinsights
+   cd hoekinsights
 
-```bash
-# Clone the repository
-git clone https://github.com/hoekinsights/chartout.git
-cd chartout
+   # Clone all repositories
+   git clone https://github.com/hoekinsights/chartout.git
+   git clone https://github.com/hoekinsights/chartout-api.git
+   git clone https://github.com/hoekinsights/chartout-app.git
+   ```
 
-# Install dependencies and create environment
-pixi install
+2. **Set up the backend API**:
+   ```bash
+   cd chartout-api
+   pixi install
+   pixi run start
+   ```
 
-# Start Jupyter Lab
-pixi run lab
-```
+3. **Set up the frontend application**:
+   ```bash
+   cd chartout-app
+   pixi install
+   pixi run npm-install
+   pixi run npm-dev
+   ```
 
-### Required Services Setup
-
-Before using the chartout package, ensure both required services are running:
-
-1. Start the backend API:
-```bash
-cd ../chartout-api
-pixi install
-pixi run start
-```
-
-2. Start the frontend application:
-```bash
-cd ../chartout-app
-pixi install
-pixi run npm-install
-pixi run npm-dev
-```
+4. **Set up the Python package**:
+   ```bash
+   cd chartout
+   pixi install
+   pixi run lab
+   ```
 
 ### Using pip
 
@@ -68,22 +101,15 @@ pip install chartout
 
 Note: When using pip, you still need to ensure the backend API and frontend application are running.
 
-## Basic Usage
+## Usage Example
 
-### Steps to Create and Purchase Your Printed Visualization
-
-1. **Create**: Start by defining your Vega-Altair visualization chart.
-2. **Preview**: Open the Chartout Store widget and view how your visualization looks on various products, in 3D.
-3. **Customize and Add to Cart**: Select your preferred product, customize it with your chart, and add it to your cart.
-4. **Checkout**: When ready, proceed to checkout to securely complete your purchase.
-
-Here's a complete example:
+Once all services are running, you can use the Python package in a Jupyter notebook, that you started through the last command (`pixi run lab`):
 
 ```python
 import chartout
 
 # Create an example chart
-chart = chartout.altair_comet()  # example chart
+chart = chartout.altair_comet()
 chart
 
 # Launch the store widget
@@ -99,7 +125,22 @@ texture_data = store.active_texture['texture']
 IPythonImage(texture_data, width=300)
 ```
 
-## Development
+## Development Workflow
+
+1. **Backend Development**:
+   - Work in the `chartout-api` repository
+   - Use `pixi run start` for development
+   - API will be available at http://127.0.0.1:8000
+
+2. **Frontend Development**:
+   - Work in the `chartout-app` repository
+   - Use `pixi run npm-dev` for development
+   - Widget will be served from the bundle directory
+
+3. **Python Package Development**:
+   - Work in the `chartout` repository
+   - Use `pixi run lab` for development
+   - Test changes in Jupyter notebooks
 
 ### Pixi Tasks
 
@@ -107,25 +148,6 @@ The project uses Pixi for dependency management and development tasks:
 
 - `pixi run lab`: Start Jupyter Lab for development
 - `pixi run test`: Run the test suite
-
-### Development Workflow
-
-1. **Setup Development Environment**:
-   - Start all required services (API and frontend)
-   - Start Jupyter Lab with `pixi run lab`
-   - Create a new notebook for testing
-
-2. **Testing the Widget**:
-   - Import the chartout package
-   - Create a test chart using `chartout.altair_comet()` or your own chart
-   - Create a Store instance to launch the widget
-   - Test widget interactions and state synchronization
-   - Verify cart updates and texture generation
-
-3. **Debugging**:
-   - Use the browser's developer tools to inspect the widget
-   - Check the Python console for backend errors
-   - Monitor the API logs for request/response issues
 
 ### Dependencies
 
