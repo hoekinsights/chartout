@@ -6,63 +6,137 @@
 
 Chartout is the Python gateway for turning your data visualizations into beautiful, printed products. This library allows you to create, customize, and purchase printed products featuring your Vega-Altair charts directly from your Jupyter notebook or other Python environments.
 
+## System Requirements
+
+The chartout package requires two additional services to be running:
+
+1. **Backend API** (`chartout-api`):
+   - Provides REST API endpoints for product information and order processing
+   - Must be running locally during development
+   - Future: will be deployed to Azure in production
+
+2. **Frontend Application** (`chartout-app`):
+   - Provides the interactive 3D product preview and customization interface
+   - Must be running locally during development
+   - Serves the widget bundle that is loaded by the Python package
+   - Future: will be deployed to NPM in production
+
 ## Installation
 
-Install the Chartout package with:
+### Using Pixi (Recommended)
+
+The recommended way to install and develop chartout is using Pixi:
+
+```bash
+# Clone the repository
+git clone https://github.com/hoekinsights/chartout.git
+cd chartout
+
+# Install dependencies and create environment
+pixi install
+
+# Start Jupyter Lab
+pixi run lab
+```
+
+### Required Services Setup
+
+Before using the chartout package, ensure both required services are running:
+
+1. Start the backend API:
+```bash
+cd ../chartout-api
+pixi install
+pixi run start
+```
+
+2. Start the frontend application:
+```bash
+cd ../chartout-app
+pixi install
+pixi run npm-install
+pixi run npm-dev
+```
+
+### Using pip
+
+Alternatively, you can install the package with pip:
 
 ```bash
 pip install chartout
 ```
 
+Note: When using pip, you still need to ensure the backend API and frontend application are running.
+
 ## Basic Usage
 
 ### Steps to Create and Purchase Your Printed Visualization
 
-1. **Create**: Start by defining your Vega-Altair visualization chart. This will be the visualization you’ll print.
+1. **Create**: Start by defining your Vega-Altair visualization chart.
 2. **Preview**: Open the Chartout Store widget and view how your visualization looks on various products, in 3D.
 3. **Customize and Add to Cart**: Select your preferred product, customize it with your chart, and add it to your cart.
 4. **Checkout**: When ready, proceed to checkout to securely complete your purchase.
 
-To launch the Chartout Store widget in a Jupyter notebook, Visual Studio Code, or Google Colab, use the following code:
+Here's a complete example:
 
 ```python
 import chartout
 
-# Assuming `chart` is your Vega-Altair chart object
-chartout.Store(chart)
+# Create an example chart
+chart = chartout.altair_comet()  # example chart
+chart
+
+# Launch the store widget
+store = chartout.Store(chart)
+store
+
+# After adding to cart in the application (React state), it's synchronized to Python
+store.cart  # synchronized
+
+# Inspect texture of active cart item in application
+from IPython.display import Image as IPythonImage
+texture_data = store.active_texture['texture']
+IPythonImage(texture_data, width=300)
 ```
 
-This will open an interactive interface where you can explore and customize how your chart appears on available products, preview the items in 3D, and add your selection to the cart. A separate browser page will open for secure checkout once you're ready.
+## Development
 
-## Advanced Usage
+### Pixi Tasks
 
-### Programmatically Building Your Cart
+The project uses Pixi for dependency management and development tasks:
 
-If you prefer to build your cart programmatically, follow these steps:
+- `pixi run lab`: Start Jupyter Lab for development
+- `pixi run test`: Run the test suite
 
-1. **Retrieve Customizable Products**: Get a list of products that can be customized with your chart.
-2. **Assign Your Visualization**: Apply your chart to the desired product(s).
-3. **Add to Cart**: Define a Chartout cart and add your customized items.
-4. **Inspect and Purchase**: Open the Chartout Store with your cart for a final 3D inspection, then proceed to checkout.
+### Development Workflow
 
-#### Example Code
+1. **Setup Development Environment**:
+   - Start all required services (API and frontend)
+   - Start Jupyter Lab with `pixi run lab`
+   - Create a new notebook for testing
 
-```python
-import chartout
+2. **Testing the Widget**:
+   - Import the chartout package
+   - Create a test chart using `chartout.altair_comet()` or your own chart
+   - Create a Store instance to launch the widget
+   - Test widget interactions and state synchronization
+   - Verify cart updates and texture generation
 
-# Step 1: Retrieve available customizable products
-products = chartout.customizables()
+3. **Debugging**:
+   - Use the browser's developer tools to inspect the widget
+   - Check the Python console for backend errors
+   - Monitor the API logs for request/response issues
 
-# Step 2: Select a product and apply your chart
-selected_product = products[0]  # For example, selecting the first available product
-selected_product.apply_chart(chart)
+### Dependencies
 
-# Step 3: Define the Cart and add the customized product
-cart = chartout.Cart()
-cart.add(selected_product)
+The project uses the following key dependencies:
+- `altair` for visualization
+- `anywidget` for Jupyter widgets
+- `numpy` for numerical operations
+- `pillow` for image processing
+- `pandas` for data manipulation
+- `vega_datasets` for example datasets
 
-# Step 4: Open the store with the preloaded cart for final inspection and checkout
-chartout.Store(cart)
-```
+## Contributing
 
-This code creates a cart, adds your customized product, and opens the Chartout Store, where you can inspect each item in 3D. When satisfied, you can proceed to checkout via a secure browser page.
+Contributions are welcome! Please feel free to submit a Pull Request.
