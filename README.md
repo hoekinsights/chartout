@@ -91,16 +91,6 @@ To set up the complete development environment:
    pixi run lab
    ```
 
-### Using pip
-
-Alternatively, you can install the package with pip:
-
-```bash
-pip install chartout
-```
-
-Note: When using pip, you still need to ensure the backend API and frontend application are running.
-
 ## Usage Example
 
 Once all services are running, you can use the Python package in a Jupyter notebook, that you started through the last command (`pixi run lab`):
