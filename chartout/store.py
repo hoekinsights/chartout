@@ -120,9 +120,9 @@ class Store(anywidget.AnyWidget):
 def customizables(debug: bool = False) -> Any:
     """Retrieve a JSON object from the Chartout API for customizables based on category."""
     if debug:
-        url = "http://127.0.0.1:8000/api/v1/products/"
+        url = "http://127.0.0.1:8000/v1/products/"
     else:
-        url = "https://chartout.io/api/v1/products/"
+        url = "https://api.chartout.io/v1/products/"
     try:
         with urllib.request.urlopen(url) as response:
             if response.status != 200:
