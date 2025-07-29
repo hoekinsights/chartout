@@ -104,8 +104,8 @@ def viz_to_cart_item(viz: VizLike) -> CartItem:
     )
 
 
-def generate_external_id() -> str:
-    """Generate a unique external ID for order creation."""
+def generate_chartout_order_id() -> str:
+    """Generate a unique chartout order ID for order creation."""
     # Generate a UUID
     unique_id = uuid.uuid4().hex
 
@@ -118,7 +118,7 @@ def generate_external_id() -> str:
     # Get the current timestamp
     timestamp = int(time.time())
 
-    # Combine all parts to form the external_id
-    external_id = f"{unique_id}-{machine_hash[:8]}-{timestamp}"
+    # Combine all parts to form the chartout_order_id
+    chartout_order_id = f"{unique_id}-{machine_hash[:8]}-{timestamp}"
 
-    return external_id
+    return chartout_order_id
