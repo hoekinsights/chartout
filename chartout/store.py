@@ -83,7 +83,7 @@ class Store(anywidget.AnyWidget):
             self.cart = item.to_dict()["items"]
             self.init_viz = {}
             self.active_item = (
-                cart_item_to_active_item(self.cart[0]) if len(self.cart) > 0 else None
+                cart_item_to_active_item(self.cart[0]).to_dict() if len(self.cart) > 0 else None
             )
         elif is_viz_like(item):
             self.cart = []
