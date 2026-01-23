@@ -1,7 +1,7 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, List
 from .models import CartItem
-from .support import viz_to_cart_item, VizLike
+from .support import viz_to_cart_item, VizLike, is_viz_like
 
 
 @dataclass
@@ -35,13 +35,15 @@ class Cart:
         Raises:
             ValueError: If an item in the list is not a valid CartItem or VizLike.
         """
-        if isinstance(item, VizLike):
+        if is_viz_like(item):
             # Convert VizLike to CartItem
             item = viz_to_cart_item(item)
             self.items.append(item)
         elif isinstance(item, list):
             for i in item:
-                if isinstance(i, dict):
+                if is_viz_like(i):
+                    i = viz_to_cart_item(i)
+                elif isinstance(i, dict):
                     i = CartItem(**i)
                 self.items.append(i)
         else:
