@@ -15,6 +15,7 @@ from .support import (
     viz_to_active_item,
     viz_to_init_viz,
     cart_item_to_active_item,
+    cart_items_to_store_list,
 )
 
 
@@ -80,7 +81,8 @@ class Store(anywidget.AnyWidget):
         super().__init__(**kwargs)
         self.active_texture = None
         if isinstance(item, Cart):
-            self.cart = item.to_dict()["items"]
+            # Serialize cart items with VizLike texture content converted to PNG bytes
+            self.cart = cart_items_to_store_list(item.items)
             self.init_viz = {}
             self.active_item = (
                 cart_item_to_active_item(self.cart[0]).to_dict() if len(self.cart) > 0 else None
