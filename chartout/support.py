@@ -108,8 +108,7 @@ def is_viz_like(viz: VizLike) -> TypeGuard[VizLike]:
         is_altair_chart(viz)
         or is_mpl_figure(viz)
         or is_plotly_figure(viz)
-        or is_pyobsplot(viz)
-        or is_pyobsplot_spec(viz)
+        or is_pyobsplot_widget(viz)
     )
 
 
@@ -167,8 +166,8 @@ def cart_item_to_store_dict(item: CartItem) -> Dict[str, Any]:
     for t in item.textures:
         content = texture_content_to_bytes(t.content)
         tex: Dict[str, Any] = {"id": t.id, "content": content}
-        if getattr(t, "user_position", None) is not None:
-            up = t.user_position
+        if getattr(t, "position", None) is not None:
+            up = t.position
             tex["user_position"] = up.to_dict() if hasattr(up, "to_dict") else up
         textures.append(tex)
     return {
@@ -202,7 +201,7 @@ def item(
     texture = Texture(
         id=f"{variant_id}_texture",
         content=content,
-        user_position=position,
+        position=position,
     )
     return CartItem(
         id=variant_id,

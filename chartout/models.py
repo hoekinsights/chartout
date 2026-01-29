@@ -12,7 +12,7 @@ class TexturePosition:
     dy: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to frontend user_position shape: alignment + optional scale, dx, dy."""
+        """Convert to frontend position shape: alignment + optional scale, dx, dy."""
         out: Dict[str, Any] = {"alignment": {"horizontal": self.horizontal, "vertical": self.vertical}}
         if self.scale is not None:
             out["scale"] = self.scale
@@ -26,11 +26,11 @@ class TexturePosition:
 @dataclass
 class Texture:
     """A texture with an id and content. Content can be bytes, a URL string, or VizLike (e.g. alt.Chart); VizLike is converted to PNG bytes when the cart is serialized for the Store.
-    Optional user_position (TexturePosition) controls placement on the product.
+    Optional position (TexturePosition) controls placement on the product.
     """
     id: str
     content: Union[str, bytes, Any]  # bytes, URL string, or VizLike (alt.Chart etc.)
-    user_position: Optional[TexturePosition] = None
+    position: Optional[TexturePosition] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Texture instance to a dictionary."""
