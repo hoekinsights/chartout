@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sys
 import io
-from typing import TYPE_CHECKING, Any, TypeVar, Dict, List
+from typing import TYPE_CHECKING, Any, TypeVar, Dict, List, Optional
 
 # Conditional imports for type checking
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     import altair as alt
 
 # Import models
-from .models import ActiveItem, Texture, InitViz, CartItem
+from .models import ActiveItem, Texture, TexturePosition, InitViz, CartItem
 
 # Define a new type variable for VizLike
 VizLike = TypeVar("VizLike", bound=Any)
@@ -116,6 +116,34 @@ def cart_item_to_store_dict(item: CartItem) -> Dict[str, Any]:
 def cart_items_to_store_list(items: List[CartItem]) -> List[Dict[str, Any]]:
     """Serialize cart items for the Store, converting any VizLike texture content to PNG bytes."""
     return [cart_item_to_store_dict(item) for item in items]
+
+
+def item(
+    variant_id: str,
+    content: Any,
+    *,
+    name: Optional[str] = None,
+    quantity: int = 1,
+    position: Optional[TexturePosition] = None,
+    **position_kw: Any,
+) -> CartItem:
+    """Create a CartItem for a single-texture variant with minimal boilerplate.
+    Texture id is derived as ``{variant_id}_texture``. Optionally pass position
+    as a TexturePosition or as keyword args (horizontal, vertical, scale, dx, dy).
+    """
+    if position is None and position_kw:
+        position = TexturePosition(**position_kw)
+    texture = Texture(
+        id=f"{variant_id}_texture",
+        content=content,
+        user_position=position,
+    )
+    return CartItem(
+        id=variant_id,
+        name=name or variant_id,
+        textures=[texture],
+        quantity=quantity,
+    )
 
 
 def viz_to_cart_item(viz: VizLike) -> CartItem:
