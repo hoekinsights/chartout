@@ -1,6 +1,6 @@
 from __future__ import annotations
-import sys
 import io
+import sys
 from typing import TYPE_CHECKING, Any, TypeVar, Dict, List, Optional
 
 # Conditional imports for type checking
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     else:
         from typing_extensions import TypeGuard
     import altair as alt
+    from pyobsplot.widget import ObsplotWidget
 
 # Import models
 from .models import ActiveItem, Texture, TexturePosition, InitViz, CartItem
@@ -28,47 +29,88 @@ def is_altair_chart(chart: Any) -> TypeGuard[alt.typing.ChartType]:
     """Check whether `chart` is an Altair Chart without importing altair."""
     return (alt := get_altair()) is not None and alt.typing.is_chart_type(chart)
 
+def altair_chart_to_png(chart: Any) -> bytes:
+    """Save an Altair Chart to PNG bytes. Call only when is_altair_chart(chart) is True."""
+    buf = io.BytesIO()
+    chart.save(buf, format="png", scale_factor=2, ppi=300)
+    buf.seek(0) 
+    return buf.getvalue()
 
-def get_mpl_figure_class() -> Any:
+def get_matplotlib() -> Any:
     """Get matplotlib.figure.Figure class if matplotlib is already loaded; else None. No import of matplotlib."""
-    mpl_figure = sys.modules.get("matplotlib.figure", None)
-    return getattr(mpl_figure, "Figure", None) if mpl_figure is not None else None
+    return sys.modules.get("matplotlib", None)
 
 
-def is_mpl_figure(obj: Any) -> bool:
-    """True if obj is a matplotlib Figure (or seaborn figure, which is a mpl Figure). Type-based, no import of matplotlib."""
-    figure_cls = get_mpl_figure_class()
-    return figure_cls is not None and isinstance(obj, figure_cls)
+def is_mpl_figure(chart: Any) -> bool:
+    """True if chart is a matplotlib Figure (or seaborn figure, which is a mpl Figure). Type-based, no import of matplotlib."""
+    return (mpl := get_matplotlib()) is not None and isinstance(chart, mpl.figure.Figure)
 
 
 def mpl_figure_to_png(fig: Any) -> bytes:
-    """Save a matplotlib Figure to PNG bytes. Call only when _is_mpl_figure(fig) is True."""
+    """Save a matplotlib Figure to PNG bytes. Call only when is_mpl_figure(fig) is True."""
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
     buf.seek(0)
     return buf.getvalue()
 
 
+def get_plotly() -> Any:
+    """Get plotly module (if already imported - else return None)."""
+    return sys.modules.get("plotly", None)
+
+
+def is_plotly_figure(chart: Any) -> bool:
+    """True if obj is a Plotly Figure. Type-based, no import of plotly."""
+    return (plotly := get_plotly()) is not None and isinstance(chart, plotly.graph_objects.Figure)
+
+
+def plotly_figure_to_png(fig: Any) -> bytes:
+    """Save a Plotly Figure to PNG bytes. Call only when is_plotly_figure(fig) is True. Requires kaleido."""
+    raise NotImplementedError("Plotly Figure cannot be converted to PNG yet.")
+
+
+def get_pyobsplot() -> Any:
+    """Get ObsplotWidget class from pyobsplot.widget if already loaded; else None. No import of pyobsplot."""
+    return sys.modules.get("pyobsplot", None)
+
+
+def is_pyobsplot_widget(chart: Any) -> TypeGuard[ObsplotWidget]:
+    """Check whether obj is a pyobsplot ObsplotWidget without importing pyobsplot."""
+    return (pyobs := get_pyobsplot()) is not None and isinstance(chart, pyobs.widget.ObsplotWidget)
+
+
+def pyobsplot_widget_to_png(chart: Any) -> bytes:
+    """Save a pyobsplot ObsplotWidget to PNG bytes. Call only when is_pyobsplot_widget(chart) is True. Requires pyobsplot."""
+    raise NotImplementedError("ObsplotWidget cannot be converted to PNG yet.")
+
+
 def chart_to_png(chart: Any) -> bytes:
-    """Convert a VizLike chart to PNG bytes. Supports Altair charts and matplotlib/seaborn figures."""
+    """Convert a VizLike chart to PNG bytes. Supports Altair, matplotlib/seaborn, Plotly, and pyobsplot plot specs."""
     if is_altair_chart(chart):
-        byte_stream = io.BytesIO()
-        chart.save(byte_stream, format="png", scale_factor=2, ppi=300)
-        byte_stream.seek(0)
-        return byte_stream.getvalue()
+        return altair_chart_to_png(chart)
     if is_mpl_figure(chart):
         return mpl_figure_to_png(chart)
+    if is_plotly_figure(chart):
+        return plotly_figure_to_png(chart)
+    if is_pyobsplot_widget(chart):
+        return pyobsplot_widget_to_png(chart)
     msg = (
         f"The provided DataViz object is not supported. Got: {type(chart)}. "
-        "Supported: Altair charts, matplotlib Figure, seaborn figures (matplotlib)."
+        "Supported: Altair charts, matplotlib figures, Plotly figures and Observable Plot widgets."
     )
     raise TypeError(msg)
 
 
 # Main Functions
 def is_viz_like(viz: VizLike) -> TypeGuard[VizLike]:
-    """True if viz is a supported chart/figure: Altair chart or matplotlib Figure (including seaborn)."""
-    return is_altair_chart(viz) or _is_mpl_figure(viz)
+    """True if viz is a supported chart/figure: Altair, matplotlib Figure (incl. seaborn), Plotly Figure, pyobsplot ObsplotWidget, or pyobsplot plot spec."""
+    return (
+        is_altair_chart(viz)
+        or is_mpl_figure(viz)
+        or is_plotly_figure(viz)
+        or is_pyobsplot(viz)
+        or is_pyobsplot_spec(viz)
+    )
 
 
 def viz_to_active_item(init_viz: InitViz) -> ActiveItem:
@@ -105,7 +147,7 @@ def cart_item_to_active_item(cart_item: Dict[str, Any]) -> ActiveItem:
 
 
 _UNSUPPORTED_TEXTURE_MSG = (
-    "Texture content must be image data: VizLike (Altair, matplotlib/seaborn) or bytes. "
+    "Texture content must be image data: VizLike (Altair, matplotlib/seaborn, Plotly, pyobsplot plot spec) or bytes. "
     "If you think this type should be supported, please open an issue or contribute at the chartout repository."
 )
 
