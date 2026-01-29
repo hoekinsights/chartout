@@ -29,22 +29,46 @@ def is_altair_chart(chart: Any) -> TypeGuard[alt.typing.ChartType]:
     return (alt := get_altair()) is not None and alt.typing.is_chart_type(chart)
 
 
+def get_mpl_figure_class() -> Any:
+    """Get matplotlib.figure.Figure class if matplotlib is already loaded; else None. No import of matplotlib."""
+    mpl_figure = sys.modules.get("matplotlib.figure", None)
+    return getattr(mpl_figure, "Figure", None) if mpl_figure is not None else None
+
+
+def is_mpl_figure(obj: Any) -> bool:
+    """True if obj is a matplotlib Figure (or seaborn figure, which is a mpl Figure). Type-based, no import of matplotlib."""
+    figure_cls = get_mpl_figure_class()
+    return figure_cls is not None and isinstance(obj, figure_cls)
+
+
+def mpl_figure_to_png(fig: Any) -> bytes:
+    """Save a matplotlib Figure to PNG bytes. Call only when _is_mpl_figure(fig) is True."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+    buf.seek(0)
+    return buf.getvalue()
+
+
 def chart_to_png(chart: Any) -> bytes:
-    """Convert an Altair chart to PNG byte data."""
+    """Convert a VizLike chart to PNG bytes. Supports Altair charts and matplotlib/seaborn figures."""
     if is_altair_chart(chart):
         byte_stream = io.BytesIO()
         chart.save(byte_stream, format="png", scale_factor=2, ppi=300)
         byte_stream.seek(0)
         return byte_stream.getvalue()
-    else:
-        msg = f"The provided DataViz object is not supported. Got: {type(chart)}"
-        raise TypeError(msg)
+    if is_mpl_figure(chart):
+        return mpl_figure_to_png(chart)
+    msg = (
+        f"The provided DataViz object is not supported. Got: {type(chart)}. "
+        "Supported: Altair charts, matplotlib Figure, seaborn figures (matplotlib)."
+    )
+    raise TypeError(msg)
 
 
 # Main Functions
 def is_viz_like(viz: VizLike) -> TypeGuard[VizLike]:
-    """Check whether `viz` is a valid Altair chart."""
-    return is_altair_chart(viz)
+    """True if viz is a supported chart/figure: Altair chart or matplotlib Figure (including seaborn)."""
+    return is_altair_chart(viz) or _is_mpl_figure(viz)
 
 
 def viz_to_active_item(init_viz: InitViz) -> ActiveItem:
@@ -81,7 +105,7 @@ def cart_item_to_active_item(cart_item: Dict[str, Any]) -> ActiveItem:
 
 
 _UNSUPPORTED_TEXTURE_MSG = (
-    "Texture content must be image data: VizLike (e.g. Altair chart) or bytes. "
+    "Texture content must be image data: VizLike (Altair, matplotlib/seaborn) or bytes. "
     "If you think this type should be supported, please open an issue or contribute at the chartout repository."
 )
 
