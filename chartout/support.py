@@ -1,11 +1,7 @@
 from __future__ import annotations
 import sys
 import io
-from typing import TYPE_CHECKING, Any, TypeVar, Optional, Dict
-import uuid
-import hashlib
-import os
-import time
+from typing import TYPE_CHECKING, Any, TypeVar, Dict, List
 
 # Conditional imports for type checking
 if TYPE_CHECKING:
@@ -84,41 +80,66 @@ def cart_item_to_active_item(cart_item: Dict[str, Any]) -> ActiveItem:
     )
 
 
+_UNSUPPORTED_TEXTURE_MSG = (
+    "Texture content must be image data: VizLike (e.g. Altair chart) or bytes. "
+    "If you think this type should be supported, please open an issue or contribute at the chartout repository."
+)
+
+
+def texture_content_to_bytes(content: Any) -> bytes:
+    """Convert texture content to PNG bytes. Accepts only VizLike (e.g. alt.Chart) or bytes/bytearray (image data)."""
+    if is_viz_like(content):
+        return chart_to_png(content)
+    if isinstance(content, (bytes, bytearray)):
+        return content if isinstance(content, bytes) else bytes(content)
+    raise TypeError(f"Texture content type is not supported: {type(content).__name__}. {_UNSUPPORTED_TEXTURE_MSG}")
+
+
+def cart_item_to_store_dict(item: CartItem) -> Dict[str, Any]:
+    """Serialize a CartItem for the Store. Texture content must be VizLike or bytes (image data)."""
+    textures = []
+    for t in item.textures:
+        content = texture_content_to_bytes(t.content)
+        tex: Dict[str, Any] = {"id": t.id, "content": content}
+        if getattr(t, "user_position", None) is not None:
+            up = t.user_position
+            tex["user_position"] = up.to_dict() if hasattr(up, "to_dict") else up
+        textures.append(tex)
+    return {
+        "id": item.id,
+        "name": item.name,
+        "textures": textures,
+        "quantity": item.quantity,
+    }
+
+
+def cart_items_to_store_list(items: List[CartItem]) -> List[Dict[str, Any]]:
+    """Serialize cart items for the Store, converting any VizLike texture content to PNG bytes."""
+    return [cart_item_to_store_dict(item) for item in items]
+
+
 def viz_to_cart_item(viz: VizLike) -> CartItem:
-    """Convert a VizLike item to a CartItem."""
+    """Convert a VizLike item to a CartItem.
+    
+    Creates a CartItem with a default variant ID (canvas_10x10) that matches
+    an actual variant in the API. The frontend will validate this CartItem with full
+    variant metadata when the cart is loaded in the Store widget.
+    """
     # Convert the VizLike object to PNG bytes
     png_data = chart_to_png(viz)
     
     # Create a Texture instance for the CartItem
+    # Use the texture ID that matches the canvas_10x10 variant
     texture = Texture(
-        id="my_canvas_texture", 
+        id="canvas_10x10_texture", 
         content=png_data
     )
     
     # Create and return a CartItem instance
+    # Use canvas_10x10 as the default variant ID (matches API variant)
     return CartItem(
-        id="my_canvas_id", 
+        id="canvas_10x10", 
         name="VizLike Item",
         textures=[texture],
         quantity=1
     )
-
-
-def generate_chartout_order_id() -> str:
-    """Generate a unique chartout order ID for order creation."""
-    # Generate a UUID
-    unique_id = uuid.uuid4().hex
-
-    # Get machine-specific information (e.g., hostname)
-    machine_info = os.uname().nodename
-
-    # Hash the machine information to keep it consistent and anonymized
-    machine_hash = hashlib.sha256(machine_info.encode()).hexdigest()
-
-    # Get the current timestamp
-    timestamp = int(time.time())
-
-    # Combine all parts to form the chartout_order_id
-    chartout_order_id = f"{unique_id}-{machine_hash[:8]}-{timestamp}"
-
-    return chartout_order_id
