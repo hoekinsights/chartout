@@ -3,7 +3,27 @@ from typing import List, Union, Optional, Dict, Any
 
 # Data Classes
 @dataclass
-class TexturePosition:
+class Placement:
+    """A placement (print area) with id and content. Optional position/print metadata for cart."""
+    placement_id: str  # e.g. "default"
+    content: Union[str, bytes, Any]
+    position: Optional[Dict[str, Any]] = None
+    print_size: Optional[Dict[str, Any]] = None
+    print_position: Optional[Dict[str, Any]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"id": self.placement_id, "content": self.content}
+        if self.position is not None:
+            out["user_position"] = self.position
+        if self.print_size is not None:
+            out["print_size"] = self.print_size
+        if self.print_position is not None:
+            out["print_position"] = self.print_position
+        return out
+
+
+@dataclass
+class PlacementPosition:
     """Position of a texture on the product. horizontal: 'left' | 'center' | 'right'; vertical: 'top' | 'middle' | 'bottom'. Optional scale, dx, dy."""
     horizontal: str = "center"
     vertical: str = "middle"
@@ -23,44 +43,40 @@ class TexturePosition:
         return out
 
 
-@dataclass
-class Texture:
-    """A texture with an id and content. Content can be bytes, a URL string, or VizLike (e.g. alt.Chart); VizLike is converted to PNG bytes when the cart is serialized for the Store.
-    Optional position (TexturePosition) controls placement on the product.
-    """
-    id: str
-    content: Union[str, bytes, Any]  # bytes, URL string, or VizLike (alt.Chart etc.)
-    position: Optional[TexturePosition] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the Texture instance to a dictionary."""
-        return asdict(self)
 
 @dataclass
-class StoreItem:
+class CartItem:
     id: str
     name: Optional[str] = None
-    textures: List[Texture] = field(default_factory=list)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the StoreItem instance to a dictionary."""
-        return asdict(self)
-
-@dataclass
-class CartItem(StoreItem):
+    placements: List[Placement] = field(default_factory=list)
     quantity: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert the CartItem instance to a dictionary."""
-        return asdict(self)
+        return {
+            "id": self.id,
+            "name": self.name,
+            "placements": [
+                p.to_dict() if hasattr(p, "to_dict") else p for p in self.placements
+            ],
+            "quantity": self.quantity,
+        }
+
 
 @dataclass
-class ActiveItem(StoreItem):
-    textures: List[Texture] = field(default_factory=list)
+class ActiveItem:
+    id: str
+    name: Optional[str] = None
+    placements: List[Placement] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert the ActiveItem instance to a dictionary."""
-        return asdict(self)
+        return {
+            "id": self.id,
+            "name": self.name,
+            "placements": [
+                p.to_dict() if hasattr(p, "to_dict") else p for p in self.placements
+            ],
+        }
 
 @dataclass
 class ActiveTexture:

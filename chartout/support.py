@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pyobsplot.widget import ObsplotWidget
 
 # Import models
-from .models import ActiveItem, Texture, TexturePosition, InitViz, CartItem
+from .models import ActiveItem, Placement, PlacementPosition, InitViz, CartItem
 
 # Define a new type variable for VizLike
 VizLike = TypeVar("VizLike", bound=Any)
@@ -114,19 +114,12 @@ def is_viz_like(viz: VizLike) -> TypeGuard[VizLike]:
 
 def viz_to_active_item(init_viz: InitViz) -> ActiveItem:
     """Convert an InitViz item to an ActiveItem."""
-    # Assuming the first image in the InitViz is used for the ActiveItem
     first_image_index = next(iter(init_viz.images))
     png_data = init_viz.images[first_image_index]
-
     return ActiveItem(
         name="Canvas",
         id="canvas_10x10",
-        textures=[
-            Texture(
-                id="canvas_10x10_texture",
-                content=png_data
-            )
-        ]
+        placements=[Placement(placement_id="default", content=png_data)],
     )
 
 
@@ -136,12 +129,34 @@ def viz_to_init_viz(viz: VizLike) -> InitViz:
     return InitViz(images=images)
 
 
+def _parse_placements(data: Any) -> List[Dict[str, Any]]:
+    """Extract placement dicts from a list. Returns only dicts with content."""
+    if not data or not isinstance(data, list):
+        return []
+    return [p for p in data if isinstance(p, dict) and p.get("content") is not None]
+
+
 def cart_item_to_active_item(cart_item: Dict[str, Any]) -> ActiveItem:
-    """Convert a CartItem to an ActiveItem."""
+    """Convert a cart item dict (from frontend) to an ActiveItem."""
+    placements_raw = _parse_placements(cart_item.get("placements"))
+    placements = []
+    for p in placements_raw:
+        content = p.get("content")
+        if content is None:
+            continue
+        placements.append(
+            Placement(
+                placement_id=p.get("id", "default"),
+                content=content,
+                position=p.get("user_position") or p.get("position"),
+                print_size=p.get("print_size"),
+                print_position=p.get("print_position"),
+            )
+        )
     return ActiveItem(
-        id=cart_item['id'],
-        name=cart_item.get('name'),
-        textures=cart_item['textures']
+        id=cart_item["id"],
+        name=cart_item.get("name"),
+        placements=placements,
     )
 
 
@@ -161,21 +176,53 @@ def texture_content_to_bytes(content: Any) -> bytes:
 
 
 def cart_item_to_store_dict(item: CartItem) -> Dict[str, Any]:
-    """Serialize a CartItem for the Store. Texture content must be VizLike or bytes (image data)."""
-    textures = []
-    for t in item.textures:
-        content = texture_content_to_bytes(t.content)
-        tex: Dict[str, Any] = {"id": t.id, "content": content}
-        if getattr(t, "position", None) is not None:
-            up = t.position
-            tex["user_position"] = up.to_dict() if hasattr(up, "to_dict") else up
-        textures.append(tex)
+    """Serialize a CartItem for the Store. Placement content must be VizLike or bytes."""
+    placements = []
+    for p in item.placements:
+        content = texture_content_to_bytes(p.content)
+        pl: Dict[str, Any] = {
+            "id": p.placement_id,
+            "content": content,
+        }
+        if p.position is not None:
+            up = p.position if isinstance(p.position, dict) else p.position.to_dict()
+            pl["user_position"] = up
+        if p.print_size is not None:
+            pl["print_size"] = p.print_size
+        if p.print_position is not None:
+            pl["print_position"] = p.print_position
+        placements.append(pl)
     return {
         "id": item.id,
         "name": item.name,
-        "textures": textures,
+        "placements": placements,
         "quantity": item.quantity,
     }
+
+
+def dict_to_cart_item(data: Dict[str, Any]) -> CartItem:
+    """Build CartItem from dict with placements."""
+    placements_raw = _parse_placements(data.get("placements"))
+    placements = []
+    for p in placements_raw:
+        content = p.get("content")
+        if content is None:
+            continue
+        placements.append(
+            Placement(
+                placement_id=p.get("id", "default"),
+                content=content,
+                position=p.get("user_position") or p.get("position"),
+                print_size=p.get("print_size"),
+                print_position=p.get("print_position"),
+            )
+        )
+    return CartItem(
+        id=data["id"],
+        name=data.get("name"),
+        placements=placements,
+        quantity=data.get("quantity", 1),
+    )
 
 
 def cart_items_to_store_list(items: List[CartItem]) -> List[Dict[str, Any]]:
@@ -189,50 +236,39 @@ def item(
     *,
     name: Optional[str] = None,
     quantity: int = 1,
-    position: Optional[TexturePosition] = None,
+    placement_id: str = "default",
+    position: Optional[PlacementPosition] = None,
     **position_kw: Any,
 ) -> CartItem:
-    """Create a CartItem for a single-texture variant with minimal boilerplate.
-    Texture id is derived as ``{variant_id}_texture``. Optionally pass position
-    as a TexturePosition or as keyword args (horizontal, vertical, scale, dx, dy).
-    """
-    if position is None and position_kw:
-        position = TexturePosition(**position_kw)
-    texture = Texture(
-        id=f"{variant_id}_texture",
+    """Create a CartItem for a single-placement variant with minimal boilerplate."""
+    # Extract placement_id from kwargs if passed there (backward compat)
+    if "placement_id" in position_kw:
+        placement_id = position_kw.pop("placement_id")
+    # Only position-related kwargs go to PlacementPosition
+    position_dict: Optional[Dict[str, Any]] = None
+    if position is not None or position_kw:
+        pos = position or PlacementPosition(**position_kw)
+        position_dict = pos.to_dict()
+    placement = Placement(
+        placement_id=placement_id,
         content=content,
-        position=position,
+        position=position_dict,
     )
     return CartItem(
         id=variant_id,
         name=name or variant_id,
-        textures=[texture],
+        placements=[placement],
         quantity=quantity,
     )
 
 
 def viz_to_cart_item(viz: VizLike) -> CartItem:
-    """Convert a VizLike item to a CartItem.
-    
-    Creates a CartItem with a default variant ID (canvas_10x10) that matches
-    an actual variant in the API. The frontend will validate this CartItem with full
-    variant metadata when the cart is loaded in the Store widget.
-    """
-    # Convert the VizLike object to PNG bytes
+    """Convert a VizLike item to a CartItem."""
     png_data = chart_to_png(viz)
-    
-    # Create a Texture instance for the CartItem
-    # Use the texture ID that matches the canvas_10x10 variant
-    texture = Texture(
-        id="canvas_10x10_texture", 
-        content=png_data
-    )
-    
-    # Create and return a CartItem instance
-    # Use canvas_10x10 as the default variant ID (matches API variant)
+    placement = Placement(placement_id="default", content=png_data)
     return CartItem(
-        id="canvas_10x10", 
+        id="canvas_10x10",
         name="VizLike Item",
-        textures=[texture],
-        quantity=1
+        placements=[placement],
+        quantity=1,
     )

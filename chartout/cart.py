@@ -1,7 +1,7 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, List
 from .models import CartItem
-from .support import viz_to_cart_item, VizLike, is_viz_like
+from .support import viz_to_cart_item, dict_to_cart_item, VizLike, is_viz_like
 
 
 @dataclass
@@ -44,11 +44,11 @@ class Cart:
                 if is_viz_like(i):
                     i = viz_to_cart_item(i)
                 elif isinstance(i, dict):
-                    i = CartItem(**i)
+                    i = dict_to_cart_item(i)
                 self.items.append(i)
         else:
             if isinstance(item, dict):
-                item = CartItem(**item)
+                item = dict_to_cart_item(item)
             self.items.append(item)
 
     def remove(self, *, index: int) -> None:
@@ -77,7 +77,7 @@ class Cart:
             f"  - ID: {item.id}\n"
             f"    Name: {item.name or 'Unnamed'}\n"
             f"    Quantity: {item.quantity}\n"
-            f"    Textures: [{', '.join(texture.id for texture in item.textures)}]"
+            f"    Placements: [{', '.join(p.placement_id for p in item.placements)}]"
             for item in self.items
         )
         return f"Cart:\n{items_repr}"
