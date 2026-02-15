@@ -8,7 +8,7 @@ import traitlets
 from traitlets import TraitType
 
 from .cart import Cart
-from .models import ActiveItem, CartItem, InitViz
+from .models import InitViz
 from .support import (
     VizLike,
     is_viz_like,
@@ -110,10 +110,13 @@ class Store(anywidget.AnyWidget):
     def from_json(self, data: Dict[str, Any]):
         """Deserialize JSON data into the Store."""
         if "cart" in data:
-            self.cart = Cart()  # Initialize a new Cart instance
-            self.cart.items = [CartItem(**item) for item in data["cart"]]
-        if "active" in data:
-            self.active_item = ActiveItem(**data["active"])
+            from .support import dict_to_cart_item
+            self.cart = Cart()
+            self.cart.items = [dict_to_cart_item(item) for item in data["cart"]]
+        if "active_item" in data:
+            from .support import cart_item_to_active_item
+            active_data = data.get("active_item")
+            self.active_item = cart_item_to_active_item(active_data).to_dict()
         if "init_viz" in data:
             self.init_viz = InitViz(images=data["init_viz"]).to_dict()
 
