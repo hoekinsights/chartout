@@ -122,8 +122,8 @@ class Store(anywidget.AnyWidget):
 
 
 # Functions
-def customizables(debug: bool = False) -> Any:
-    """Retrieve a JSON object from the Chartout API for customizables based on category."""
+def products(debug: bool = False) -> Any:
+    """Retrieve a JSON object from the Chartout API for products based on category."""
     if debug:
         url = "http://127.0.0.1:8000/v1/products/"
     else:
