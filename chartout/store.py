@@ -122,12 +122,16 @@ class Store(anywidget.AnyWidget):
 
 
 # Functions
-def customizables(debug: bool = False) -> Any:
-    """Retrieve a JSON object from the Chartout API for customizables based on category."""
-    if debug:
-        url = "http://127.0.0.1:8000/v1/products/"
-    else:
-        url = "https://api.chartout.io/v1/products/"
+DEFAULT_STORE_URL = "https://api.chartout.io/v1/products/"
+
+
+def products(**kwargs: Any) -> Any:
+    """Retrieve a JSON object from the Chartout API for products.
+
+    Pass store=<url> in kwargs to use a different products API base URL.
+    """
+    store = kwargs.pop("store", None)
+    url = store if store is not None else DEFAULT_STORE_URL
     try:
         with urllib.request.urlopen(url) as response:
             if response.status != 200:

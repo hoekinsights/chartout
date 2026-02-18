@@ -3,7 +3,7 @@ import io
 from PIL import Image, ImageDraw
 
 # Import from other modules
-from .store import customizables
+from .store import products
 from .support import is_viz_like, chart_to_png
 
 # Helper Functions
@@ -142,7 +142,7 @@ def create_tiled_image(variant):
 def variant_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
     """Create texture data image using the given variant ID and textures."""
     # Retrieve product configurations from the API
-    products_json = customizables(debug=True)
+    products_json = products(store="http://127.0.0.1:8000/v1/products/")
     my_variant = next(
         (v for v in products_json["variants"] if v["id"] == id_variant), None
     )

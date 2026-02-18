@@ -65,22 +65,16 @@ class Cart:
         del self.items[index]
 
     def __repr__(self) -> str:
-        """Return a string representation of the Cart.
-
-        Returns:
-            str: A string representation of the Cart, including item IDs, names, quantities, and texture information.
-        """
         if not self.items:
             return "Cart(empty)"
-        
-        items_repr = "\n".join(
+        lines = (
             f"  - ID: {item.id}\n"
             f"    Name: {item.name or 'Unnamed'}\n"
             f"    Quantity: {item.quantity}\n"
-            f"    Placements: [{', '.join(p.placement_id for p in item.placements)}]"
+            f"    Placements: [{', '.join(repr(p) for p in item.placements)}]"
             for item in self.items
         )
-        return f"Cart:\n{items_repr}"
+        return "Cart:\n" + "\n".join(lines)
 
     def to_dict(self):
         return asdict(self)
