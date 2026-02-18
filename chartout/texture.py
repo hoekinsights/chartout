@@ -141,10 +141,12 @@ def create_tiled_image(variant):
 
 def variant_to_texture(id_variant: str, textures: List[Dict[str, Any]]) -> bytes:
     """Create texture data image using the given variant ID and textures."""
-    # Retrieve product configurations from the API
-    products_json = products(store="http://127.0.0.1:8000/v1/products/")
+    # Retrieve product configurations from the API (returns list of variant dicts)
+    product_list = products(store="http://127.0.0.1:8000/v1/products/")
+    variants = product_list if isinstance(product_list, list) else []
     my_variant = next(
-        (v for v in products_json["variants"] if v["id"] == id_variant), None
+        (v for v in variants if isinstance(v, dict) and v.get("id") == id_variant),
+        None,
     )
 
     if not my_variant:

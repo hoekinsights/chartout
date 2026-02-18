@@ -8,7 +8,7 @@ import traitlets
 from traitlets import TraitType
 
 from .cart import Cart
-from .models import InitViz
+from .models import CartItem, InitViz
 from .support import (
     VizLike,
     is_viz_like,
@@ -76,8 +76,8 @@ class Store(anywidget.AnyWidget):
         key_trait=traitlets.Int(), value_trait=traitlets.Bytes(), allow_none=True
     ).tag(sync=True)
 
-    def __init__(self, item: Optional[Union[Cart, VizLike]] = None, **kwargs):
-        """Initialize the Store with an optional cart or a valid Altair chart."""
+    def __init__(self, item: Optional[Union[Cart, CartItem, VizLike]] = None, **kwargs):
+        """Initialize the Store with an optional Cart, CartItem, or VizLike (chart)."""
         super().__init__(**kwargs)
         self.active_texture = None
         if isinstance(item, Cart):
@@ -87,13 +87,17 @@ class Store(anywidget.AnyWidget):
             self.active_item = (
                 cart_item_to_active_item(self.cart[0]).to_dict() if len(self.cart) > 0 else None
             )
+        elif isinstance(item, CartItem):
+            self.cart = cart_items_to_store_list([item])
+            self.init_viz = {}
+            self.active_item = cart_item_to_active_item(self.cart[0]).to_dict()
         elif is_viz_like(item):
             self.cart = []
             init_viz_obj = viz_to_init_viz(item)
             self.init_viz = init_viz_obj.to_dict()
             self.active_item = viz_to_active_item(init_viz_obj).to_dict()
         elif item is not None:
-            raise TypeError("item must be of type Cart or VizLike.")
+            raise TypeError("item must be of type Cart, CartItem, or VizLike.")
         else:
             self.cart = []
             self.init_viz = {}
@@ -124,20 +128,28 @@ class Store(anywidget.AnyWidget):
 # Functions
 DEFAULT_STORE_URL = "https://api.chartout.io/v1/products/"
 
+# Single cache: store URL -> full products response (shared by products() and ID lookups).
+_products_cache: Dict[str, Any] = {}
+
 
 def products(**kwargs: Any) -> Any:
     """Retrieve a JSON object from the Chartout API for products.
 
     Pass store=<url> in kwargs to use a different products API base URL.
+    Result is cached per URL.
     """
     store = kwargs.pop("store", None)
     url = store if store is not None else DEFAULT_STORE_URL
+    if url in _products_cache:
+        return _products_cache[url]
     try:
         with urllib.request.urlopen(url) as response:
             if response.status != 200:
                 raise Exception(f"Error fetching data: {response.status}")
             data = response.read()
-            return json.loads(data)
+            out = json.loads(data)
+            _products_cache[url] = out
+            return out
     except urllib.error.URLError as e:
         raise ConnectionError(f"Failed to connect to {url}: {e.reason}")
     except json.JSONDecodeError as e:

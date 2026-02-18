@@ -18,18 +18,12 @@ from .models import ActiveItem, Placement, PlacementPosition, InitViz, CartItem
 # Define a new type variable for VizLike
 VizLike = TypeVar("VizLike", bound=Any)
 
-_PRODUCT_IDS_CACHE: dict[str, list[str]] = {}
-
-
 def _get_available_product_ids(*, store: Optional[str] = None) -> list[str]:
-    from .store import DEFAULT_STORE_URL, products as fetch_products
-    key = store if store is not None else DEFAULT_STORE_URL
-    if key in _PRODUCT_IDS_CACHE:
-        return _PRODUCT_IDS_CACHE[key]
-    products_list = fetch_products(store=store)
-    ids = [p["id"] for p in products_list if isinstance(p, dict) and "id" in p]
-    _PRODUCT_IDS_CACHE[key] = ids
-    return ids
+    """Product IDs from the products API; uses the same cache as products()."""
+    from .store import products as fetch_products
+    data = fetch_products(store=store)
+    items = data if isinstance(data, list) else []
+    return [p["id"] for p in items if isinstance(p, dict) and "id" in p]
 
 
 # Helper Functions
