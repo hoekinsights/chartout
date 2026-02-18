@@ -18,6 +18,19 @@ from .models import ActiveItem, Placement, PlacementPosition, InitViz, CartItem
 # Define a new type variable for VizLike
 VizLike = TypeVar("VizLike", bound=Any)
 
+_PRODUCT_IDS_CACHE: dict[str, list[str]] = {}
+
+
+def _get_available_product_ids(*, store: Optional[str] = None) -> list[str]:
+    from .store import DEFAULT_STORE_URL, products as fetch_products
+    key = store if store is not None else DEFAULT_STORE_URL
+    if key in _PRODUCT_IDS_CACHE:
+        return _PRODUCT_IDS_CACHE[key]
+    products_list = fetch_products(store=store)
+    ids = [p["id"] for p in products_list if isinstance(p, dict) and "id" in p]
+    _PRODUCT_IDS_CACHE[key] = ids
+    return ids
+
 
 # Helper Functions
 def get_altair() -> Any:
@@ -149,8 +162,6 @@ def cart_item_to_active_item(cart_item: Dict[str, Any]) -> ActiveItem:
                 placement_id=p.get("id", "default"),
                 content=content,
                 position=p.get("user_position") or p.get("position"),
-                print_size=p.get("print_size"),
-                print_position=p.get("print_position"),
             )
         )
     return ActiveItem(
@@ -187,10 +198,6 @@ def cart_item_to_store_dict(item: CartItem) -> Dict[str, Any]:
         if p.position is not None:
             up = p.position if isinstance(p.position, dict) else p.position.to_dict()
             pl["user_position"] = up
-        if p.print_size is not None:
-            pl["print_size"] = p.print_size
-        if p.print_position is not None:
-            pl["print_position"] = p.print_position
         placements.append(pl)
     return {
         "id": item.id,
@@ -213,8 +220,6 @@ def dict_to_cart_item(data: Dict[str, Any]) -> CartItem:
                 placement_id=p.get("id", "default"),
                 content=content,
                 position=p.get("user_position") or p.get("position"),
-                print_size=p.get("print_size"),
-                print_position=p.get("print_position"),
             )
         )
     return CartItem(
@@ -231,23 +236,37 @@ def cart_items_to_store_list(items: List[CartItem]) -> List[Dict[str, Any]]:
 
 
 def item(
-    variant_id: str,
+    product_id: str,
     content: Any,
     *,
     name: Optional[str] = None,
     quantity: int = 1,
     placement_id: str = "default",
     position: Optional[PlacementPosition] = None,
-    **position_kw: Any,
+    validate: bool = False,
+    **kwargs: Any,
 ) -> CartItem:
-    """Create a CartItem for a single-placement variant with minimal boilerplate."""
-    # Extract placement_id from kwargs if passed there (backward compat)
-    if "placement_id" in position_kw:
-        placement_id = position_kw.pop("placement_id")
-    # Only position-related kwargs go to PlacementPosition
+    """Create a CartItem for a single-placement product with minimal boilerplate.
+
+    Use an id from co.products() as product_id (e.g. \"canvas_10x10\", \"mousepad_white_8x7\").
+    content must be VizLike (Altair, matplotlib, Plotly, pyobsplot) or bytes/bytearray (image data).
+    When validate=True, product_id is checked against co.products(); pass store=<url> in kwargs for a different API.
+    """
+    if not is_viz_like(content) and not isinstance(content, (bytes, bytearray)):
+        raise TypeError(
+            f"content must be VizLike (chart/figure) or bytes/bytearray (image data), got {type(content).__name__}. {_UNSUPPORTED_TEXTURE_MSG}"
+        )
+    if validate:
+        store = kwargs.pop("store", None)
+        available_ids = _get_available_product_ids(store=store)
+        if product_id not in available_ids:
+            raise ValueError(
+                f"product_id {product_id!r} is not available; "
+                f"valid ids are: {available_ids}"
+            ) from None
     position_dict: Optional[Dict[str, Any]] = None
-    if position is not None or position_kw:
-        pos = position or PlacementPosition(**position_kw)
+    if position is not None or kwargs:
+        pos = position or PlacementPosition(**kwargs)
         position_dict = pos.to_dict()
     placement = Placement(
         placement_id=placement_id,
@@ -255,8 +274,8 @@ def item(
         position=position_dict,
     )
     return CartItem(
-        id=variant_id,
-        name=name or variant_id,
+        id=product_id,
+        name=name or product_id,
         placements=[placement],
         quantity=quantity,
     )

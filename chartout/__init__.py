@@ -1,8 +1,8 @@
 __version__ = "0.0.1dev"
 
 from .develop import altair_heatmap, altair_map_selection, altair_comet
-from .models import CartItem, Placement, PlacementPosition
-from .store import products, Store
+from .models import CartItem, Horizontal, Placement, PlacementPosition, Vertical
+from .store import DEFAULT_STORE_URL, products, Store
 from .cart import Cart
 from .support import VizLike, viz_to_active_item, item
 
@@ -14,11 +14,14 @@ __all__ = [
     "altair_heatmap",
     "altair_map_selection",
     "altair_comet",
+    "DEFAULT_STORE_URL",
     "products",
     "Store",
     "CartItem",
+    "Horizontal",
     "Placement",
     "PlacementPosition",
+    "Vertical",
     "Cart",
     "VizLike",
     "viz_to_active_item",
