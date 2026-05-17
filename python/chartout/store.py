@@ -48,9 +48,9 @@ class Store(anywidget.AnyWidget):
             state of the store.
     """
 
-    # Paths for JavaScript and CSS
-    _esm = pathlib.Path("../chartout-app/bundle/Widget.js")
-    # _css = pathlib.Path("../chartout-app/bundle/styles.css")
+    # Use local bundle during development if available, otherwise load from CDN.
+    _local_bundle = pathlib.Path(__file__).parent.parent.parent.parent / "chartout-app" / "bundle" / "Widget.js"
+    _esm = _local_bundle if _local_bundle.exists() else "https://cdn.jsdelivr.net/npm/chartout@1/bundle/Widget.js"
 
     cart = traitlets.List(
         trait=traitlets.Dict(

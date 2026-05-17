@@ -4,152 +4,66 @@
 
 <sub><sup>With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.</sup></sub>
 
-Chartout is a system for turning data visualizations into beautiful, printed products. It consists of three separate repositories that work together:
+Chartout turns data visualizations into beautiful, printed products. You create a chart, pick a product, and chartout handles everything from 3D preview to order fulfilment.
 
 ## Repository Structure
 
 ```
-hoekinsights/
-├── chartout/           # Python package for Jupyter integration
-├── chartout-api/       # Backend API service
-└── chartout-app/       # Frontend application and widget
+chartout/
+├── python/       ← pip installable Python package (Jupyter integration)
+├── javascript/   ← reference implementation for embedding the widget in JS apps
+├── pixi.toml     ← development environment
+└── README.md
 ```
 
-### Components
+The interactive 3D widget is published separately as a closed-source npm package:
+[`chartout` on npm](https://www.npmjs.com/package/chartout)
 
-1. **[chartout](https://github.com/hoekinsights/chartout)** (This Repository)
-   - The main Python package
-   - Provides Jupyter notebook integration
-   - Handles chart-to-product conversion
-   - Requires both the API and frontend to be running
+## Python
 
-2. **[chartout-api](https://github.com/hoekinsights/chartout-api)**
-   - FastAPI backend service
-   - Manages products, orders, and payments
-   - Provides REST API endpoints
-   - Future: Will be deployed to Azure
+### Install
 
-3. **[chartout-app](https://github.com/hoekinsights/chartout-app)**
-   - React-based frontend application
-   - Provides 3D product preview
-   - Handles product customization
-   - Serves the widget bundle
-   - Future: Will be deployed to NPM
+```bash
+pip install chartout
+```
 
-## System Requirements
-
-The chartout package requires two additional services to be running:
-
-1. **Backend API** (`chartout-api`):
-   - Provides REST API endpoints for product information and order processing
-   - Must be running locally during development
-   - Future: will be deployed to Azure in production
-   - Repository: https://github.com/hoekinsights/chartout-api
-
-2. **Frontend Application** (`chartout-app`):
-   - Provides the interactive 3D product preview and customization interface
-   - Must be running locally during development
-   - Serves the widget bundle that is loaded by the Python package
-   - Future: will be deployed to NPM in production
-   - Repository: https://github.com/hoekinsights/chartout-app
-
-## Development Setup
-
-To set up the complete development environment:
-
-1. **Create a directory and clone all repositories**:
-   ```bash
-   # Create a new directory
-   mkdir hoekinsights
-   cd hoekinsights
-
-   # Clone all repositories
-   git clone https://github.com/hoekinsights/chartout.git
-   git clone https://github.com/hoekinsights/chartout-api.git
-   git clone https://github.com/hoekinsights/chartout-app.git
-   ```
-
-2. **Set up the backend API**:
-   ```bash
-   cd chartout-api
-   pixi install
-   pixi run start
-   ```
-
-3. **Set up the frontend application**:
-   ```bash
-   cd chartout-app
-   pixi install
-   pixi run npm-install
-   pixi run npm-dev
-   ```
-
-4. **Set up the Python package**:
-   ```bash
-   cd chartout
-   pixi install
-   pixi run lab
-   ```
-
-## Usage Example
-
-Once all services are running, you can use the Python package in a Jupyter notebook, that you started through the last command (`pixi run lab`):
+### Quick start
 
 ```python
-import chartout
+import chartout as co
 
-# Create an example chart
-chart = chartout.altair_comet()
-chart
+# Create a chart
+chart = co.altair_comet()
 
-# Launch the store widget
-store = chartout.Store(chart)
+# Open the store widget in Jupyter
+store = co.Store(chart)
 store
-
-# After adding to cart in the application (React state), it's synchronized to Python
-store.cart  # synchronized
-
-# Inspect texture of active cart item in application
-from IPython.display import Image as IPythonImage
-texture_data = store.active_texture['texture']
-IPythonImage(texture_data, width=300)
 ```
 
-![Example Jupyter Notebook Usage](notebook.png)
+After adding to cart in the widget, state is synchronized back to Python:
 
-## Development Workflow
+```python
+store.cart            # list of cart items
+store.active_texture  # rendered texture as PNG bytes
+```
 
-1. **Backend Development**:
-   - Work in the `chartout-api` repository
-   - Use `pixi run start` for development
-   - API will be available at http://127.0.0.1:8000
+### Development setup
 
-2. **Frontend Development**:
-   - Work in the `chartout-app` repository
-   - Use `pixi run npm-dev` for development
-   - Widget will be served from the bundle directory
+Requires [chartout-api](https://github.com/hoekinsights/chartout-api) running locally.
 
-3. **Python Package Development**:
-   - Work in the `chartout` repository
-   - Use `pixi run lab` for development
-   - Test changes in Jupyter notebooks
+```bash
+git clone https://github.com/mattijn/chartout.git
+cd chartout
+pixi install
+pixi run lab        # starts Jupyter Lab in python/
+pixi run test       # runs the test suite
+```
 
-### Pixi Tasks
+API must be running at `http://localhost:8000`. See [chartout-api](https://github.com/hoekinsights/chartout-api) for setup.
 
-The project uses Pixi for dependency management and development tasks:
+## JavaScript
 
-- `pixi run lab`: Start Jupyter Lab for development
-- `pixi run test`: Run the test suite
-
-### Dependencies
-
-The project uses the following key dependencies:
-- `altair` for visualization
-- `anywidget` for Jupyter widgets
-- `numpy` for numerical operations
-- `pillow` for image processing
-- `pandas` for data manipulation
-- `vega_datasets` for example datasets
+See [`javascript/README.md`](javascript/README.md) for how to embed the chartout widget in a JavaScript application.
 
 ## Contributing
 
