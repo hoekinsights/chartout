@@ -13,7 +13,7 @@ interface Props {
 /**
  * Mounts the chartout widget into a DOM element.
  *
- * The widget reads cart, active_item, and init_viz from the model.
+ * The widget reads cart and active_item from the model.
  * It writes active_texture back to the model as the user interacts
  * (e.g. when switching variants, the new composite texture is rendered
  * and stored in active_texture).

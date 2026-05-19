@@ -7,43 +7,23 @@
  * embedded in any JavaScript application without Jupyter.
  *
  * State flows:
- *   → cart           set by you — list of cart items to show
- *   → active_item    set by you — item currently shown in the 3D viewer, placements carry the PNG content
- *   → init_viz       set by you — PNG bytes keyed by slot index, used as fallback when active_item placements are empty
- *   ← active_texture written by the widget — the rendered composite texture
+ *   → cart              set by you — list of cart items to show
+ *   → active_item       set by you — item currently shown in the viewer; placements carry PNG content
+ *   → view              set by you — "cart" | "checkout"
+ *   → shipping_location set by you — pre-fills checkout country/state selector
+ *   ← active_texture    written by the widget — the rendered composite texture
  *
  * Reference: https://anywidget.dev/en/afm/
  */
 
-export interface CartItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price?: number;
-  placements: Array<{
-    id: string;
-    content: Uint8Array | string;
-  }>;
-}
-
-export interface ActiveItem {
-  id: string;
-  name: string;
-  placements: Array<{
-    id: string;
-    content: Uint8Array | string;
-  }>;
-}
-
-export interface ActiveTexture {
-  texture: Uint8Array;
-}
+import type { CartItem, ActiveItem, ActiveTexture, StoreView, ShippingLocation } from 'chartout';
 
 export interface ChartoutState {
   cart: CartItem[];
   active_item: ActiveItem | null;
   active_texture: ActiveTexture | null;
-  init_viz: Record<number, Uint8Array> | null;
+  view: StoreView;
+  shipping_location: ShippingLocation;
 }
 
 export interface ChartoutModel {
@@ -60,7 +40,8 @@ export function createModel(initialState: Partial<ChartoutState> = {}): Chartout
     cart: [],
     active_item: null,
     active_texture: null,
-    init_viz: null,
+    view: 'cart',
+    shipping_location: { country: '', state: '' },
     ...initialState,
   };
 
