@@ -147,10 +147,3 @@ class ActiveTexture:
         """Convert the ActiveTexture instance to a dictionary."""
         return asdict(self)
 
-@dataclass
-class InitViz:
-    images: Dict[int, bytes] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[int, bytes]:
-        """Convert the InitViz instance to a dictionary."""
-        return self.images

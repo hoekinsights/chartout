@@ -1,6 +1,7 @@
 import json
 import pathlib
 import urllib.request
+from enum import StrEnum
 from typing import Any, Dict, Optional, Union
 
 import anywidget
@@ -8,15 +9,19 @@ import traitlets
 from traitlets import TraitType
 
 from .cart import Cart
-from .models import CartItem, InitViz
+from .models import CartItem
 from .support import (
     VizLike,
     is_viz_like,
     viz_to_active_item,
-    viz_to_init_viz,
     cart_item_to_active_item,
     cart_items_to_store_list,
 )
+
+
+class StoreView(StrEnum):
+    CART = "cart"
+    CHECKOUT = "checkout"
 
 
 # Helper Classes
@@ -72,9 +77,16 @@ class Store(anywidget.AnyWidget):
         read_only=False,
     ).tag(sync=True)
 
-    init_viz = traitlets.Dict(
-        key_trait=traitlets.Int(), value_trait=traitlets.Bytes(), allow_none=True
+    view = traitlets.Enum(
+        list(StoreView), default_value=StoreView.CART
     ).tag(sync=True)
+
+    shipping_location = traitlets.Dict(
+        key_trait=traitlets.Unicode(),
+        value_trait=traitlets.Unicode(),
+        default_value={"country": "", "state": ""},
+    ).tag(sync=True)
+
 
     def __init__(self, item: Optional[Union[Cart, CartItem, VizLike]] = None, **kwargs):
         """Initialize the Store with an optional Cart, CartItem, or VizLike (chart)."""
@@ -83,32 +95,42 @@ class Store(anywidget.AnyWidget):
         if isinstance(item, Cart):
             # Serialize cart items with VizLike texture content converted to PNG bytes
             self.cart = cart_items_to_store_list(item.items)
-            self.init_viz = {}
             self.active_item = (
                 cart_item_to_active_item(self.cart[0]).to_dict() if len(self.cart) > 0 else None
             )
         elif isinstance(item, CartItem):
             self.cart = cart_items_to_store_list([item])
-            self.init_viz = {}
             self.active_item = cart_item_to_active_item(self.cart[0]).to_dict()
         elif is_viz_like(item):
             self.cart = []
-            init_viz_obj = viz_to_init_viz(item)
-            self.init_viz = init_viz_obj.to_dict()
-            self.active_item = viz_to_active_item(init_viz_obj).to_dict()
+            self.active_item = viz_to_active_item(item).to_dict()
         elif item is not None:
             raise TypeError("item must be of type Cart, CartItem, or VizLike.")
         else:
             self.cart = []
-            self.init_viz = {}
             self.active_item = None
+
+    def add_item(self, item: CartItem) -> None:
+        """Add a CartItem to the cart, triggering a widget sync.
+
+        Reassigns the full cart list so anywidget picks up the change.
+        If the cart was empty, also sets active_item to the new entry.
+        """
+        if not isinstance(item, CartItem):
+            raise TypeError("item must be a CartItem. Use chartout.item() to create one.")
+        serialized = cart_items_to_store_list([item])
+        was_empty = not self.cart
+        self.cart = list(self.cart or []) + serialized
+        if was_empty:
+            self.active_item = cart_item_to_active_item(self.cart[0]).to_dict()
 
     def to_json(self):
         """Serialize the widget's state to a JSON-compatible dictionary."""
         return {
             "cart": self.cart,
             "active_item": self.active_item,
-            "init_viz": self.init_viz,
+            "view": self.view,
+            "shipping_location": self.shipping_location,
         }
 
     def from_json(self, data: Dict[str, Any]):
@@ -121,8 +143,10 @@ class Store(anywidget.AnyWidget):
             from .support import cart_item_to_active_item
             active_data = data.get("active_item")
             self.active_item = cart_item_to_active_item(active_data).to_dict()
-        if "init_viz" in data:
-            self.init_viz = InitViz(images=data["init_viz"]).to_dict()
+        if "view" in data:
+            self.view = data["view"]
+        if "shipping_location" in data:
+            self.shipping_location = data["shipping_location"]
 
 
 # Functions

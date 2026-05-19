@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pyobsplot.widget import ObsplotWidget
 
 # Import models
-from .models import ActiveItem, Placement, PlacementPosition, InitViz, CartItem
+from .models import ActiveItem, Placement, PlacementPosition, CartItem
 
 # Define a new type variable for VizLike
 VizLike = TypeVar("VizLike", bound=Any)
@@ -119,21 +119,14 @@ def is_viz_like(viz: VizLike) -> TypeGuard[VizLike]:
     )
 
 
-def viz_to_active_item(init_viz: InitViz) -> ActiveItem:
-    """Convert an InitViz item to an ActiveItem."""
-    first_image_index = next(iter(init_viz.images))
-    png_data = init_viz.images[first_image_index]
+def viz_to_active_item(viz: VizLike) -> ActiveItem:
+    """Convert a VizLike chart directly to an ActiveItem."""
+    png_data = chart_to_png(viz)
     return ActiveItem(
         name="Canvas",
         id="canvas_10x10",
         placements=[Placement(placement_id="default", content=png_data)],
     )
-
-
-def viz_to_init_viz(viz: VizLike) -> InitViz:
-    """Convert a VizLike item to an InitViz."""
-    images = {0: chart_to_png(viz)}
-    return InitViz(images=images)
 
 
 def _parse_placements(data: Any) -> List[Dict[str, Any]]:
