@@ -235,9 +235,9 @@ def item(
 ) -> CartItem:
     """Create a CartItem for a single-placement product with minimal boilerplate.
 
-    Use an id from co.products() as product_id (e.g. \"canvas_10x10\", \"mousepad_white_8x7\").
+    Use an id from chartout.products() as product_id (e.g. `"canvas_10x10"`, `"mousepad_white_8x7"`).
     content must be VizLike (Altair, matplotlib, Plotly, pyobsplot) or bytes/bytearray (image data).
-    When validate=True, product_id is checked against co.products(); pass store=<url> in kwargs for a different API.
+    When validate=True, product_id is checked against chartout.products().
     """
     if not is_viz_like(content) and not isinstance(content, (bytes, bytearray)):
         raise TypeError(
