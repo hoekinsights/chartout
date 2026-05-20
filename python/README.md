@@ -15,14 +15,12 @@ pip install chartout
 ## Quick start
 
 ```python
+import altair as alt
 import chartout
 
-# Create a chart
-chart = chartout.altair_comet()
-
-# Open the store widget in Jupyter
+chart = alt.Chart(data).mark_point().encode(x='x', y='y')
 store = chartout.Store(chart)
-store
+store  # renders the interactive widget in Jupyter
 ```
 
 After adding to cart in the widget, state is synchronized back to Python:

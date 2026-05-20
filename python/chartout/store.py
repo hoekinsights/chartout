@@ -1,5 +1,4 @@
 import json
-import pathlib
 import urllib.request
 from enum import StrEnum
 from typing import Any, Dict, Optional, Union
@@ -53,9 +52,7 @@ class Store(anywidget.AnyWidget):
             state of the store.
     """
 
-    # Use local bundle during development if available, otherwise load from CDN.
-    _local_bundle = pathlib.Path(__file__).parent.parent.parent.parent / "chartout-app" / "bundle" / "Widget.js"
-    _esm = _local_bundle if _local_bundle.exists() else "https://cdn.jsdelivr.net/npm/chartout@1/bundle/Widget.js"
+    _esm = "https://cdn.jsdelivr.net/npm/chartout@1/bundle/Widget.js"
 
     cart = traitlets.List(
         trait=traitlets.Dict(

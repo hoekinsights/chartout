@@ -1,21 +1,37 @@
 [project]
 name = "chartout"
-description = "Add your description here"
+description = "Print your insights, anytime, anywhere"
 readme = "README.md"
 authors = [
     { name = "Mattijn van Hoek", email = "mattijn@gmail.com" }
 ]
 requires-python = ">=3.11"
 dynamic = ["version"]
-dependencies = []
+dependencies = [
+    "anywidget",
+    "traitlets",
+]
+
+[project.optional-dependencies]
+altair = [
+    "altair[save]>=6",
+]
+matplotlib = [
+    "matplotlib",
+]
+plotly = [
+    "plotly",
+    "kaleido",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.urls]
-Documentation = "https:/chartout.io"
-Source = "https://github.com/mattijn/chartout"
+Homepage = "https://www.chartout.io"
+Documentation = "https://www.chartout.io"
+Source = "https://github.com/hoekinsights/chartout"
 
 [tool.hatch.version]
 path = "chartout/__init__.py"
@@ -25,3 +41,4 @@ allow-direct-references = true
 
 [tool.hatch.build]
 include = ["/chartout"]
+exclude = ["/chartout/develop.py"]
