@@ -1,75 +1,88 @@
 # chartout — JavaScript reference implementation
 
 This example shows how to embed the [chartout](https://www.npmjs.com/package/chartout)
-widget in a JavaScript application without Jupyter.
+widget in a React application without Jupyter.
 
 ## How it works
 
-The chartout widget uses the [anywidget](https://anywidget.dev) model protocol to sync
-state. In Jupyter this is handled automatically by traitlets. Outside Jupyter you create
-a model yourself — a plain object with six methods — and pass it to the widget's render
-function.
+Three steps connect your chart to the widget:
 
 ```
-your app  ──→  model  ──→  chartout widget (closed source, npm)
-                ↑
-          active_texture
+1. createChartoutModel()  — create the state bridge
+2. svgToBytes(svg, w, h)  — rasterise your chart at print resolution
+3. model.set('cart', …)   — push the bytes in; the widget re-renders
+   model.set('active_item', …)
 ```
 
-### State
+The widget uses the [anywidget](https://anywidget.dev) model protocol. Outside Jupyter
+you create the model yourself and pass it to `<ChartoutWidget>`.
+
+## Widget state
 
 | Key | Direction | Type | Description |
 |-----|-----------|------|-------------|
-| `cart` | → | `CartItem[]` | Items to show in the cart |
-| `active_item` | → | `ActiveItem \| null` | Item currently shown in the 3D viewer — placements carry the PNG content |
-| `init_viz` | → | `Record<number, Uint8Array> \| null` | PNG bytes per slot index — fallback when active_item placements are empty (e.g. after selecting from cart) |
+| `cart` | → | `CartItem[]` | Products in the cart |
+| `active_item` | → | `ActiveItem \| null` | Item shown in the 3D viewer — placements carry the PNG bytes |
+| `view` | → | `'cart' \| 'checkout'` | Which store view to show |
+| `shipping_location` | → | `ShippingLocation` | Pre-fills the checkout country/state selector |
 | `active_texture` | ← | `ActiveTexture \| null` | Composite texture rendered by the widget |
 
-### The model
+## Quick start
 
 ```ts
-import { createModel } from './src/model';
+import { createChartoutModel } from 'chartout';
+import type { CartItem, ActiveItem } from 'chartout';
+import { svgToBytes } from './rasterise';
 
-const model = createModel({
-  cart: [{ id: 'mug_white_11oz', name: 'White 11oz Mug', quantity: 1, placements: [] }],
-  active_item: {
-    id: 'mug_white_11oz',
-    name: 'White 11oz Mug',
-    placements: [{ id: 'front', content: pngBytes }],  // Uint8Array from your chart library
-  },
-});
+const model = createChartoutModel({});
 
-// Update the chart image at any time
-model.set('active_item', { ...model.get('active_item'), placements: [{ id: 'front', content: newPngBytes }] });
+// Rasterise your chart at print resolution
+const bytes = svgToBytes(mySvgElement, 3900, 3900);
 
-// Listen to widget output
-model.on('change:active_texture', () => {
-  const { texture } = model.get('active_texture');
-  // texture is a Uint8Array — use it to preview or upload the artwork
+// VizLike: preview without adding to cart
+model.set('active_item', {
+  id: 'canvas_10x10',
+  name: 'Canvas (10″×10″)',
+  placements: [{ id: 'default', content: bytes }],
+} satisfies ActiveItem);
+
+// CartItem: add to cart
+model.set('cart', [{
+  id: 'mug_black_11oz',
+  name: 'Mug (11 oz)',
+  quantity: 1,
+  placements: [{ id: 'default', content: bytes }],
+} satisfies CartItem]);
+
+// Listen to cart changes (e.g. when the user updates quantities)
+model.on('change:cart', () => {
+  const cart = model.get('cart');
+  // cart is CartItem[] — sync to your own state or trigger a checkout flow
 });
 ```
 
-### Rendering (React)
+## Rendering (React)
+
+The widget has a fixed height and expands to fill its container's width.
 
 ```tsx
-import { ChartoutWidget } from './src/ChartoutWidget';
+import { ChartoutWidget } from './ChartoutWidget';
 
-<ChartoutWidget model={model} />
+<ChartoutWidget model={model} style={{ width: '100%' }} />
 ```
 
-### Rendering (vanilla JS)
+## Print dimensions
 
-```js
-import chartout from 'chartout';
+`svgToBytes(svg, width, height)` must be called at the product's exact print size:
 
-const cleanup = chartout.render({
-  model,
-  el: document.getElementById('widget-container'),
-  experimental: {},
-});
-
-// Call cleanup() to unmount
-```
+| Variant ID | Name | Width | Height |
+|------------|------|-------|--------|
+| `canvas_10x10` | Canvas (10″×10″) | 3900 | 3900 |
+| `canvas_16x32_vertical` | Canvas (16″×32″) Vertical | 5184 | 9600 |
+| `canvas_16x32_horizontal` | Canvas (16″×32″) Horizontal | 9600 | 5184 |
+| `mug_black_11oz` | Mug (Black / 11 oz) | 2700 | 1050 |
+| `mug_green_11oz` | Mug (Green / 11 oz) | 2700 | 1050 |
+| `mousepad_white_8x7` | Mouse Pad (White / 8.7″×7.1″) | 2700 | 2250 |
 
 ## Running the example
 
@@ -78,20 +91,17 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The example renders a simple bar chart as a PNG,
-passes it to the widget as `init_viz`, and shows the composite texture written
-back by the widget in a sidebar.
+Open http://localhost:5174. The three tabs demonstrate the three integration
+patterns: **VizLike** (preview only), **CartItem** (single product), **Cart**
+(multiple products).
 
-## Using your own chart
+## File overview
 
-Replace `renderChartAsPng` in `App.tsx` with the output of any library that
-produces a PNG — Vega-Altair (via the Python bridge), D3, Chart.js, Observable Plot, etc.
-The only requirement is a `Uint8Array` of PNG bytes at the right dimensions:
-
-| Product | Width | Height |
-|---------|-------|--------|
-| Mug | 2700 | 1050 |
-| Canvas | 3900 | 3900 |
-| Poster | 3900 | 3900 |
-| T-shirt | 2700 | 1050 |
-| Mousepad | 2700 | 2250 |
+| File | Purpose |
+|------|---------|
+| `src/App.tsx` | Tutorial, the three integration patterns end-to-end |
+| `src/rasterise.ts` | `svgToBytes()` SVG to PNG via resvg-wasm |
+| `src/charts.ts` | Observable Plot chart render functions |
+| `src/examples.ts` | Product specs and code snippets for the three tabs |
+| `src/ChartoutWidget.tsx` | React component wrapper around the chartout widget |
+| `src/polyfills.ts` | `SharedArrayBuffer` polyfill required by resvg-wasm |

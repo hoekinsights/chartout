@@ -187,9 +187,7 @@ export function App() {
       </pre>
 
       {/* The widget — stays mounted; model state drives what it displays */}
-      <div style={{ height: 500 }}>
-        <ChartoutWidget model={model} />
-      </div>
+      <ChartoutWidget model={model} style={{ width: '100%' }} />
     </div>
   );
 }

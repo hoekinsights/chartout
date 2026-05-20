@@ -9,13 +9,14 @@
  * so output is pixel-consistent between the Python and JavaScript paths.
  * Synchronous after module initialisation; no canvas, no CORS, no Promises.
  *
- * Required print dimensions per product
+ * Required print dimensions per variant
  * ──────────────────────────────────────
- *  Canvas 10×10      3900 × 3900   (1 : 1)
- *  Poster            3900 × 3900   (1 : 1)
- *  Mug 11 oz         2700 × 1050   (~2.6 : 1)
- *  T-shirt           2700 × 1050   (~2.6 : 1)
- *  Mousepad 8×7      2700 × 2250   (~1.2 : 1)
+ *  canvas_10x10              3900 × 3900
+ *  canvas_16x32_vertical     5184 × 9600
+ *  canvas_16x32_horizontal   9600 × 5184
+ *  mug_black_11oz            2700 × 1050
+ *  mug_green_11oz            2700 × 1050
+ *  mousepad_white_8x7        2700 × 2250
  *
  * @example
  *   const svg = Plot.plot({ marks: [...] }) as SVGSVGElement;
