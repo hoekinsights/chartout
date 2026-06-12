@@ -89,13 +89,13 @@ pos = chartout.PlacementPosition(
 item = chartout.item('mug_black_11oz', chart, position=pos)
 ```
 
-| Parameter | Values | Default |
-|---|---|---|
-| `horizontal` | `'left'`, `'center'`, `'right'` | `'center'` |
-| `vertical` | `'top'`, `'middle'`, `'bottom'` | `'middle'` |
-| `scale` | float | — |
-| `dx` | float | — |
-| `dy` | float | — |
+> | Parameter | Values | Default |
+> |---|---|---|
+> | `horizontal` | `'left'`, `'center'`, `'right'` | `'center'` |
+> | `vertical` | `'top'`, `'middle'`, `'bottom'` | `'middle'` |
+> | `scale` | float | — |
+> | `dx` | float | — |
+> | `dy` | float | — |
 
 ## Build a cart
 
@@ -144,10 +144,10 @@ store = chartout.Store(chart)  # raw chart (no product selected yet)
 store
 ```
 
-| Parameter | Values | Default | Description |
-|---|---|---|---|
-| `view` | `'cart'`, `'checkout'` | `'cart'` | Starting view |
-| `shipping_location` | `{'country': 'NL'}` | — | Pre-fills country/state in checkout |
+> | Parameter | Values | Default | Description |
+> |---|---|---|---|
+> | `view` | `'cart'`, `'checkout'` | `'cart'` | Starting view |
+> | `shipping_location` | `{'country': 'NL'}` | — | Pre-fills country/state in checkout |
 
 ```python
 store = chartout.Store(item, view='checkout', shipping_location={'country': 'NL'})
