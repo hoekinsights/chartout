@@ -1,14 +1,10 @@
 from __future__ import annotations
 import io
 import sys
-from typing import TYPE_CHECKING, Any, TypeVar, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, TypeVar, Dict, List, Optional, TypeGuard
 
 # Conditional imports for type checking
 if TYPE_CHECKING:
-    if sys.version_info >= (3, 10):
-        from typing import TypeGuard
-    else:
-        from typing_extensions import TypeGuard
     import altair as alt
     from pyobsplot.widget import ObsplotWidget
 

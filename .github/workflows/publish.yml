@@ -1,6 +1,7 @@
 name: Publish to PyPI
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -13,7 +14,7 @@ jobs:
         working-directory: python
 
     permissions:
-      contents: read
+      contents: write
       id-token: write  # required for PyPI trusted publishing
 
     steps:
@@ -25,6 +26,21 @@ jobs:
 
       - name: Install build dependencies
         run: pip install hatchling build
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(python -c "import re; print(re.search(r'__version__ = \"(.+?)\"', open('chartout/__init__.py').read()).group(1))")
+          echo "value=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.version.outputs.value }}" || echo "Tag already exists, skipping"
+          git push origin "v${{ steps.version.outputs.value }}" || echo "Tag already pushed, skipping"
 
       - name: Build
         run: python -m build

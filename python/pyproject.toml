@@ -41,4 +41,3 @@ allow-direct-references = true
 
 [tool.hatch.build]
 include = ["/chartout"]
-exclude = ["/chartout/develop.py"]
