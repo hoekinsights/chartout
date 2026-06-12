@@ -8,7 +8,7 @@ ChartOut turns data visualizations into beautiful, printed products. You create 
 
 ## Getting started
 
-- **Python / Jupyter** — see [`python/README.md`](python/README.md)
+- **Python / Jupyter** - full docs in [`python/`](python)
 
   ```python
   import altair as alt
@@ -23,7 +23,7 @@ ChartOut turns data visualizations into beautiful, printed products. You create 
 
   ![ChartOut store widget](images/store.png)
 
-- **JavaScript / React** — see [`javascript/README.md`](javascript/README.md)
+- **JavaScript / React** — full docs in [`javascript/`](javascript)
 
 The interactive 3D widget is published separately as a npm package:
 [`chartout` on npm](https://www.npmjs.com/package/chartout)
