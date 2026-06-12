@@ -85,9 +85,26 @@ class Store(anywidget.AnyWidget):
     ).tag(sync=True)
 
 
-    def __init__(self, item: Optional[Union[Cart, CartItem, VizLike]] = None, **kwargs):
-        """Initialize the Store with an optional Cart, CartItem, or VizLike (chart)."""
+    def __init__(
+        self,
+        item: Optional[Union[Cart, CartItem, VizLike]] = None,
+        *,
+        view: Union[StoreView, str] = StoreView.CART,
+        shipping_location: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ):
+        """Initialize the Store widget.
+
+        Args:
+            item: Cart, CartItem, or VizLike (chart/figure) to display.
+            view: Initial view, either `'cart'` (default) or `'checkout'`.
+            shipping_location: Pre-fills country/state in checkout,
+                e.g. `{'country': 'NL'}` or `{'country': 'US', 'state': 'CA'}`.
+        """
         super().__init__(**kwargs)
+        self.view = view
+        if shipping_location is not None:
+            self.shipping_location = shipping_location
         self.active_texture = None
         if isinstance(item, Cart):
             # Serialize cart items with VizLike texture content converted to PNG bytes
@@ -153,13 +170,14 @@ DEFAULT_STORE_URL = "https://api.chartout.io/v1/products/"
 _products_cache: Dict[str, Any] = {}
 
 
-def products(**kwargs: Any) -> Any:
-    """Retrieve a JSON object from the Chartout API for products.
+def products(*, store: Optional[str] = None) -> list[dict]:
+    """Return available products from the ChartOut API.
 
-    Pass store=<url> in kwargs to use a different products API base URL.
+    Args:
+        store: Override the default API URL. Defaults to the ChartOut product catalogue.
+
     Result is cached per URL.
     """
-    store = kwargs.pop("store", None)
     url = store if store is not None else DEFAULT_STORE_URL
     if url in _products_cache:
         return _products_cache[url]

@@ -10,6 +10,9 @@ platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64", "win-64"]
 lab = "jupyter-lab --notebook-dir=python"
 test = { cmd = "pytest", cwd = "python" }
 
+[pypi-dependencies]
+chartout = { path = "./python", editable = true }
+
 [dependencies]
 python = ">=3.9"
 jupyterlab = "*"

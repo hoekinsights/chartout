@@ -1,4 +1,8 @@
-# chartout — JavaScript reference implementation
+# ChartOut - JavaScript Module
+
+**Print Your Insights, Anytime, Anywhere**
+
+> With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
 
 This example shows how to embed the [chartout](https://www.npmjs.com/package/chartout)
 widget in a React application without Jupyter.

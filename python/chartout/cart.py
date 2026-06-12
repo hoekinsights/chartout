@@ -19,8 +19,7 @@ class Cart:
         """Initialize the Cart with an optional list of items.
 
         Args:
-            items (Optional[List[CartItem]]): A list of dictionaries conforming to
-            CartItem to initialize the cart with.
+            items: List of CartItem instances to initialize the cart with.
         """
         self.items: List[CartItem] = []
         if items is not None:
@@ -30,7 +29,7 @@ class Cart:
         """Add a CartItem, a list of CartItems, or a VizLike to the cart.
 
         Args:
-            item (CartItem | List[CartItem] | VizLike): A CartItem, a list of CartItems, or a VizLike to be added to the cart.
+            item: A CartItem, list of CartItems, or VizLike to add.
 
         Raises:
             ValueError: If an item in the list is not a valid CartItem or VizLike.

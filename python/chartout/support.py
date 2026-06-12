@@ -226,14 +226,15 @@ def item(
     quantity: int = 1,
     placement_id: str = "default",
     position: Optional[PlacementPosition] = None,
-    validate: bool = False,
+    validate: bool = True,
     **kwargs: Any,
 ) -> CartItem:
     """Create a CartItem for a single-placement product with minimal boilerplate.
 
     Use an id from chartout.products() as product_id (e.g. `"canvas_10x10"`, `"mousepad_white_8x7"`).
     content must be VizLike (Altair, matplotlib, Plotly, pyobsplot) or bytes/bytearray (image data).
-    When validate=True, product_id is checked against chartout.products().
+    Positioning kwargs (horizontal, vertical, scale, dx, dy) are forwarded to PlacementPosition.
+    Set validate=False to skip the API check when product_id is already known to be valid.
     """
     if not is_viz_like(content) and not isinstance(content, (bytes, bytearray)):
         raise TypeError(

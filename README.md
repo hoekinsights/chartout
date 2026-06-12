@@ -4,25 +4,30 @@
 
 > With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
 
-Chartout turns data visualizations into beautiful, printed products. You create a chart, pick a product, and chartout handles everything from 3D preview to order fulfilment.
-
-The interactive 3D widget is published separately as a npm package:
-[`chartout` on npm](https://www.npmjs.com/package/chartout)
-
-## Repository structure
-
-```
-chartout/
-├── python/       ← pip-installable Python package (Jupyter integration)
-├── javascript/   ← reference implementation for embedding the widget in JS apps
-├── pixi.toml     ← development environment
-└── README.md
-```
+ChartOut turns data visualizations into beautiful, printed products. You create a chart, pick a product, and chartout handles everything from 3D preview to order fulfilment.
 
 ## Getting started
 
 - **Python / Jupyter** — see [`python/README.md`](python/README.md)
+
+  ```python
+  import altair as alt
+  import chartout
+
+  chart = alt.Chart(data).mark_point().encode(x='x', y='y')
+
+  item = chartout.item('mug_black_11oz', chart)
+  store = chartout.Store(item)
+  store  # renders 3D preview + checkout in Jupyter
+  ```
+
+  ![ChartOut store widget](images/store.png)
+
 - **JavaScript / React** — see [`javascript/README.md`](javascript/README.md)
+
+The interactive 3D widget is published separately as a npm package:
+[`chartout` on npm](https://www.npmjs.com/package/chartout)
+
 
 ## Contributing
 
