@@ -4,89 +4,124 @@
 
 > With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
 
-This example shows how to embed the [chartout](https://www.npmjs.com/package/chartout)
-widget in a React application without Jupyter.
+**chartout** turns data visualisations into physical products, mugs, canvases, mousepads, and more.
+You pass an SVG chart; the widget lets the user preview it on a 3D product model, adjust the placement, and check out. This reference implementation shows how to embed the widget in a JavaScript application outside Jupyter.
 
 ## How it works
 
 Three steps connect your chart to the widget:
 
 ```
-1. createChartoutModel()  — create the state bridge
-2. svgToBytes(svg, w, h)  — rasterise your chart at print resolution
-3. model.set('cart', …)   — push the bytes in; the widget re-renders
-   model.set('active_item', …)
+1. createChartoutModel()    - create the state bridge
+2. mount(el, { model })     - render the widget into any DOM element
+3. openWithViz(model, svg)  - rasterise your chart and push it into the widget
+   openWithItem(model, id, svg)
+   openWithCart(model, items)
 ```
-
-The widget uses the [anywidget](https://anywidget.dev) model protocol. Outside Jupyter
-you create the model yourself and pass it to `<ChartoutWidget>`.
-
-## Widget state
-
-| Key | Direction | Type | Description |
-|-----|-----------|------|-------------|
-| `cart` | → | `CartItem[]` | Products in the cart |
-| `active_item` | → | `ActiveItem \| null` | Item shown in the 3D viewer — placements carry the PNG bytes |
-| `view` | → | `'cart' \| 'checkout'` | Which store view to show |
-| `shipping_location` | → | `ShippingLocation` | Pre-fills the checkout country/state selector |
-| `active_texture` | ← | `ActiveTexture \| null` | Composite texture rendered by the widget |
 
 ## Quick start
 
 ```ts
 import { createChartoutModel } from 'chartout';
-import type { CartItem, ActiveItem } from 'chartout';
-import { svgToBytes } from './rasterise';
+import { openWithViz, openWithItem, openWithCart, svgToBytes } from 'chartout/store';
 
 const model = createChartoutModel({});
 
-// Rasterise your chart at print resolution
-const bytes = svgToBytes(mySvgElement, 3900, 3900);
+// VizLike: rasterise and preview, user picks product inside the store
+await openWithViz(model, mugSvg, 'Histogram');
 
-// VizLike: preview without adding to cart
-model.set('active_item', {
-  id: 'canvas_10x10',
-  name: 'Canvas (10″×10″)',
-  placements: [{ id: 'default', content: bytes }],
-} satisfies ActiveItem);
+// CartItem: pre-select a specific product
+await openWithItem(model, 'canvas_10x10', canvasSvg, 'Scatter density');
 
-// CartItem: add to cart
-model.set('cart', [{
-  id: 'mug_black_11oz',
-  name: 'Mug (11 oz)',
-  quantity: 1,
-  placements: [{ id: 'default', content: bytes }],
-} satisfies CartItem]);
-
-// Listen to cart changes (e.g. when the user updates quantities)
-model.on('change:cart', () => {
-  const cart = model.get('cart');
-  // cart is CartItem[] — sync to your own state or trigger a checkout flow
-});
+// Cart: fill the cart with several products at once
+const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+  svgToBytes(canvasSvg), svgToBytes(mugSvg), svgToBytes(mousepadSvg),
+]);
+openWithCart(model, [
+  { id: 'canvas_10x10',       name: 'Canvas (10x10)',  quantity: 1, placements: [{ id: 'default', content: canvasBytes   }] },
+  { id: 'mug_black_11oz',     name: 'Mug (11 oz)',     quantity: 1, placements: [{ id: 'default', content: mugBytes      }] },
+  { id: 'mousepad_white_8x7', name: 'Mousepad (8x7)',  quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
+]);
 ```
 
-## Rendering (React)
+## Widget state
 
-The widget has a fixed height and expands to fill its container's width.
+| Key | Direction | Type | Description |
+|-----|-----------|------|-------------|
+| `cart` | -> | `CartItem[]` | Products in the cart |
+| `active_item` | -> | `ActiveItem \| null` | Item shown in the 3D viewer, placements carry the PNG bytes |
+| `view` | -> | `'cart' \| 'checkout'` | Which store view to show |
+| `shipping_location` | -> | `ShippingLocation` | Pre-fills the checkout country/state selector |
+| `active_texture` | <- | `ActiveTexture \| null` | Composite texture rendered by the widget |
+
+## Rasterising SVG charts
+
+Pass your SVG element directly to `svgToBytes`. It converts it to a high-resolution PNG
+for printing. The chart's proportions, axes, and layout are untouched; only the pixel
+output size increases.
+
+```ts
+import { svgToBytes } from 'chartout/store';
+
+const bytes = await svgToBytes(mySvgElement);       // PNG at 3000 px on the long edge
+const bytes = await svgToBytes(mySvgElement, 4000); // same chart, more pixels
+```
+
+## Product placement ratios
+
+Use `GET /v1/products` to discover the placement aspect ratio for each product.
+The ratio tells the widget the shape of the print area, it does **not** force
+your chart into that shape.
+
+```ts
+// GET /v1/products response (excerpt)
+[
+  { id: 'canvas_10x10',           placements: [{ id: 'default', print_ratio: '1:1'  }] },
+  { id: 'mug_black_11oz',         placements: [{ id: 'default', print_ratio: '18:7' }] },
+  { id: 'mousepad_white_8x7',     placements: [{ id: 'default', print_ratio: '6:5'  }] },
+  { id: 'canvas_16x32_vertical',  placements: [{ id: 'default', print_ratio: '27:50'}] },
+  { id: 'canvas_16x32_horizontal',placements: [{ id: 'default', print_ratio: '50:27'}] },
+  { id: 'mug_green_11oz',         placements: [{ id: 'default', print_ratio: '18:7' }] },
+]
+```
+
+If you want the chart's proportions to closely match the product's placement area
+(so the design fills most of the print surface), render your chart at those proportions
+before passing it to `svgToBytes`:
+
+```ts
+const svg = Plot.plot({ width: 900, height: 350, ... }); // ~18:7 for a mug
+const bytes = await svgToBytes(svg);
+```
+
+## Rendering
+
+**React** - use `chartout/react` so the widget shares your app's React instance:
 
 ```tsx
-import { ChartoutWidget } from './ChartoutWidget';
+import { createChartoutModel } from 'chartout';
+import { ChartoutWidget } from 'chartout/react';
+import { openWithViz } from 'chartout/store';
+
+const model = createChartoutModel({});
+
+button.onclick = () => openWithViz(model, svgElement, 'Histogram');
 
 <ChartoutWidget model={model} style={{ width: '100%' }} />
 ```
 
-## Print dimensions
+**Vanilla JS / Vue / Svelte** - use `chartout/mount`:
 
-`svgToBytes(svg, width, height)` must be called at the product's exact print size:
+```ts
+import { createChartoutModel } from 'chartout';
+import { mount } from 'chartout/mount';
+import { openWithViz } from 'chartout/store';
 
-| Variant ID | Name | Width | Height |
-|------------|------|-------|--------|
-| `canvas_10x10` | Canvas (10″×10″) | 3900 | 3900 |
-| `canvas_16x32_vertical` | Canvas (16″×32″) Vertical | 5184 | 9600 |
-| `canvas_16x32_horizontal` | Canvas (16″×32″) Horizontal | 9600 | 5184 |
-| `mug_black_11oz` | Mug (Black / 11 oz) | 2700 | 1050 |
-| `mug_green_11oz` | Mug (Green / 11 oz) | 2700 | 1050 |
-| `mousepad_white_8x7` | Mouse Pad (White / 8.7″×7.1″) | 2700 | 2250 |
+const model = createChartoutModel({});
+const { destroy } = mount(document.getElementById('store'), { model });
+
+button.onclick = () => openWithViz(model, svgElement, 'Histogram');
+```
 
 ## Running the example
 
@@ -104,8 +139,7 @@ patterns: **VizLike** (preview only), **CartItem** (single product), **Cart**
 | File | Purpose |
 |------|---------|
 | `src/App.tsx` | Tutorial, the three integration patterns end-to-end |
-| `src/rasterise.ts` | `svgToBytes()` SVG to PNG via resvg-wasm |
-| `src/charts.ts` | Observable Plot chart render functions |
 | `src/examples.ts` | Product specs and code snippets for the three tabs |
-| `src/ChartoutWidget.tsx` | React component wrapper around the chartout widget |
-| `src/polyfills.ts` | `SharedArrayBuffer` polyfill required by resvg-wasm |
+| `src/charts.ts` | Observable Plot chart render functions |
+| `src/faithful.json` | Old Faithful geyser data used by the charts |
+| `src/main.tsx` | Vite entry point |

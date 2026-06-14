@@ -5,7 +5,7 @@
  * chartout widget from a React application:
  *
  *   1. createChartoutModel()       — create the state bridge
- *   2. svgToBytes(svg, w, h)       — rasterise your chart at print resolution
+ *   2. svgToBytes(svg)             — rasterise your chart at print resolution
  *   3. model.set('active_item', …) — push bytes into the widget
  *      model.set('cart', […])
  *
@@ -14,11 +14,21 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CartItem, ActiveItem } from 'chartout';
+import type { CartItem } from 'chartout';
 import { createChartoutModel } from 'chartout';
-import { ChartoutWidget } from './ChartoutWidget';
-import { svgToBytes } from './rasterise';
-import { ALL_PRODUCTS, CANVAS, MUG, MOUSEPAD, EXAMPLES, type ExampleId } from './examples';
+import { ChartoutWidget } from 'chartout/react';
+import { openWithViz, openWithItem, openWithCart, svgToBytes } from 'chartout/store';
+import { PRODUCTS, EXAMPLES, type ExampleId, type ProductSpec } from './examples';
+
+/**
+ * Compute display dimensions from a printRatio string (e.g. '18:7') so that
+ * the long edge equals targetLongEdge pixels.
+ */
+function ratioSize(spec: ProductSpec, targetLongEdge: number): [number, number] {
+  const [rw, rh] = spec.printRatio.split(':').map(Number);
+  if (rw >= rh) return [targetLongEdge, Math.round(targetLongEdge * rh / rw)];
+  return [Math.round(targetLongEdge * rw / rh), targetLongEdge];
+}
 
 export function App() {
   // ── Step 1: Create the model ───────────────────────────────────────────────
@@ -29,59 +39,50 @@ export function App() {
 
   const [tab, setTab] = useState<ExampleId>('vizlike');
   const example = EXAMPLES.find(e => e.id === tab)!;
+  const previewProducts = example.previewKeys.map(k => PRODUCTS.find(p => p.key === k)!);
 
-  // ── Step 2: Rasterise charts at print resolution (once on mount) ───────────
-  // The widget requires PNG bytes at the product's exact print dimensions.
-  // svgToBytes() uses resvg-wasm: synchronous, no canvas, no CORS issues.
-  // This step is expensive (~50–200 ms per chart), so we do it once and cache.
-  const rasterised = useRef(new Map<string, Uint8Array>());
+  // ── Step 2: Render all charts into their preview divs on mount ───────────
+  // One render per product — the same SVG element is both displayed and
+  // passed to the chartout/store helpers for rasterisation.
+  const svgEls = useRef(new Map<string, SVGSVGElement>());
 
   useEffect(() => {
-    const scratch = document.createElement('div');
-    for (const p of ALL_PRODUCTS) {
-      const svg = p.renderFn(scratch, p.w, p.h);
-      rasterised.current.set(p.key, svgToBytes(svg, p.w, p.h));
+    const PREVIEW_H = 180;
+    for (const p of PRODUCTS) {
+      const el = previewEls.current.get(p.key);
+      if (!el) continue;
+      const [pw, ph] = ratioSize(p, PREVIEW_H);
+      svgEls.current.set(p.key, p.renderFn(el, pw, ph));
     }
-    // Kick off the first example once rasterisation is done.
     updateWidget('vizlike');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Step 3: Update the widget when the active example changes ─────────────
-  // These are the model.set() calls you'd write in your own application.
-  // Each pattern below matches one of the three integration approaches.
-  const updateWidget = useCallback((id: ExampleId) => {
-    const bytes = rasterised.current;
+  // ── Step 3: Drive the widget via chartout/store helpers ───────────────────
+  const updateWidget = useCallback(async (id: ExampleId) => {
+    const canvas   = PRODUCTS.find(p => p.key === 'canvas_10x10')!;
+    const mug      = PRODUCTS.find(p => p.key === 'mug_black_11oz')!;
+    const mousepad = PRODUCTS.find(p => p.key === 'mousepad_white_8x7')!;
 
     if (id === 'vizlike') {
-      // VizLike: preview a chart on a product without adding it to the cart.
-      model.set('cart', []);
-      model.set('active_item', {
-        id: CANVAS.id, name: CANVAS.name,
-        placements: [{ id: CANVAS.placement, content: bytes.get('canvas')! }],
-      } satisfies ActiveItem);
+      // openWithViz — user picks product inside the store (defaults to mug_black_11oz)
+      await openWithViz(model, svgEls.current.get('mug_black_11oz')!, mug.name);
 
     } else if (id === 'cartitem') {
-      // CartItem: add a single product to the cart with its chart.
-      model.set('cart', [{
-        id: MUG.id, name: MUG.name, quantity: 1,
-        placements: [{ id: MUG.placement, content: bytes.get('mug')! }],
-      } satisfies CartItem]);
-      model.set('active_item', {
-        id: MUG.id, name: MUG.name,
-        placements: [{ id: MUG.placement, content: bytes.get('mug')! }],
-      } satisfies ActiveItem);
+      // openWithItem — specific product pre-selected
+      await openWithItem(model, canvas.id, svgEls.current.get('canvas_10x10')!, canvas.name);
 
     } else {
-      // Cart: fill the cart with several products, each with its own chart.
-      model.set('cart', [
-        { id: CANVAS.id,   name: CANVAS.name,   quantity: 1, placements: [{ id: CANVAS.placement,   content: bytes.get('canvas')!   }] },
-        { id: MOUSEPAD.id, name: MOUSEPAD.name, quantity: 2, placements: [{ id: MOUSEPAD.placement, content: bytes.get('mousepad')! }] },
-        { id: MUG.id,      name: MUG.name,      quantity: 1, placements: [{ id: MUG.placement,      content: bytes.get('mug')!      }] },
+      // openWithCart — pre-built cart with multiple products
+      const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+        svgToBytes(svgEls.current.get('canvas_10x10')!),
+        svgToBytes(svgEls.current.get('mug_black_11oz')!),
+        svgToBytes(svgEls.current.get('mousepad_white_8x7')!),
+      ]);
+      openWithCart(model, [
+        { id: canvas.id,   name: canvas.name,   quantity: 1, placements: [{ id: canvas.placement,   content: canvasBytes   }] },
+        { id: mug.id,      name: mug.name,      quantity: 1, placements: [{ id: mug.placement,      content: mugBytes      }] },
+        { id: mousepad.id, name: mousepad.name, quantity: 2, placements: [{ id: mousepad.placement, content: mousepadBytes }] },
       ] satisfies CartItem[]);
-      model.set('active_item', {
-        id: CANVAS.id, name: CANVAS.name,
-        placements: [{ id: CANVAS.placement, content: bytes.get('canvas')! }],
-      } satisfies ActiveItem);
     }
   }, [model]);
 
@@ -90,19 +91,9 @@ export function App() {
     updateWidget(id);
   };
 
-  // ── Screen-size previews (re-render on tab switch) ─────────────────────────
-  // These run at display size (180 px tall) so the DOM is fast.
-  // All containers stay mounted so switching tabs doesn't lose the ref.
+  // Preview containers — always mounted, toggled with display:none.
+  // Charts are rendered into these on mount and persist across tab switches.
   const previewEls = useRef(new Map<string, HTMLDivElement | null>());
-
-  useEffect(() => {
-    const PREVIEW_H = 180;
-    for (const p of example.previewProducts) {
-      const el = previewEls.current.get(p.key);
-      if (!el) continue;
-      p.renderFn(el, Math.round(PREVIEW_H * p.w / p.h), PREVIEW_H);
-    }
-  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -152,8 +143,8 @@ export function App() {
 
       {/* Chart previews — always mounted, toggled with display */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 16 }}>
-        {ALL_PRODUCTS.map(p => {
-          const visible = example.previewProducts.some(ep => ep.key === p.key);
+        {PRODUCTS.map(p => {
+          const visible = previewProducts.some(pp => pp.key === p.key);
           return (
             <div key={p.key} style={{ display: visible ? 'flex' : 'none', flexDirection: 'column', gap: 4 }}>
               <div
@@ -161,7 +152,7 @@ export function App() {
                 style={{ border: '1px solid #e8e8e8', background: '#fff' }}
               />
               <span style={{ fontSize: 11, color: '#444', fontFamily: 'ui-monospace, monospace' }}>{p.id}</span>
-              <span style={{ fontSize: 10, color: '#999' }}>{p.placement} · {p.w}×{p.h}</span>
+              <span style={{ fontSize: 10, color: '#999' }}>{p.placement} · {p.printRatio}</span>
             </div>
           );
         })}

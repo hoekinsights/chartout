@@ -6,9 +6,11 @@
  *   CartItem — add a single product to the cart
  *   Cart     — fill the cart with several products at once
  *
- * ProductSpec ties a product id / print dimensions to the chart render
- * function that produces its texture. The same spec drives both the
- * screen-size preview and the full-resolution rasterisation.
+ * ProductSpec ties a product id to the chart render function that produces its
+ * texture. printRatio comes from GET /v1/products and is used to size the chart
+ * at an appropriate aspect ratio for display and rendering. It does NOT
+ * control rasterisation pixel size — svgToBytes() handles print resolution
+ * automatically, preserving the SVG's natural aspect ratio.
  */
 
 import { renderScatterDensity, renderHistogram, renderTimeSeries } from './charts';
@@ -20,15 +22,18 @@ export type ExampleId = 'vizlike' | 'cartitem' | 'cart';
 export interface ProductSpec {
   /** Short key used to look up rasterised bytes (e.g. 'canvas'). */
   key: string;
-  /** chartout product id as accepted by the API. */
+  /** chartout product id as returned by GET /v1/products. */
   id: string;
   name: string;
   placement: string;
-  /** Print width in pixels. */
-  w: number;
-  /** Print height in pixels. */
-  h: number;
-  /** Renders the chart SVG into `container` at the given dimensions. */
+  /**
+   * Placement aspect ratio from GET /v1/products (e.g. '1:1', '18:7', '6:5').
+   * Used to size the chart at an appropriate aspect ratio for display.
+   * Not a fixed pixel size — the widget fits the chart onto the product's
+   * placement area using its built-in scale/alignment controls.
+   */
+  printRatio: string;
+  /** Renders the chart SVG into `container` at the given display dimensions. */
   renderFn: (container: HTMLElement, w: number, h: number) => SVGSVGElement;
 }
 
@@ -36,8 +41,8 @@ export interface Example {
   id: ExampleId;
   label: string;
   description: string;
-  /** Products whose previews are shown for this tab. */
-  previewProducts: ProductSpec[];
+  /** Keys of products whose previews are shown for this tab. */
+  previewKeys: string[];
   /** Code snippets displayed in the UI. */
   snippets: {
     /** The chart-library code (collapsible — users already know this). */
@@ -47,25 +52,23 @@ export interface Example {
   };
 }
 
-// ── Product specs ─────────────────────────────────────────────────────────────
+// ── Products ──────────────────────────────────────────────────────────────────
+// printRatio matches the value returned by GET /v1/products for each product.
 
-export const CANVAS: ProductSpec = {
-  key: 'canvas', id: 'canvas_10x10', name: 'Canvas (10″×10″)',
-  placement: 'default', w: 3900, h: 3900, renderFn: renderScatterDensity,
-};
-
-export const MUG: ProductSpec = {
-  key: 'mug', id: 'mug_black_11oz', name: 'Mug (11 oz)',
-  placement: 'default', w: 2700, h: 1050, renderFn: renderHistogram,
-};
-
-export const MOUSEPAD: ProductSpec = {
-  key: 'mousepad', id: 'mousepad_white_8x7', name: 'Mousepad (8″×7″)',
-  placement: 'default', w: 2700, h: 2250, renderFn: renderTimeSeries,
-};
-
-/** All products used across the examples — rasterised once on mount. */
-export const ALL_PRODUCTS: ProductSpec[] = [CANVAS, MUG, MOUSEPAD];
+export const PRODUCTS: ProductSpec[] = [
+  {
+    key: 'canvas_10x10', id: 'canvas_10x10', name: 'Canvas (10″×10″)',
+    placement: 'default', printRatio: '1:1', renderFn: renderScatterDensity,
+  },
+  {
+    key: 'mug_black_11oz', id: 'mug_black_11oz', name: 'Mug (11 oz)',
+    placement: 'default', printRatio: '18:7', renderFn: renderHistogram,
+  },
+  {
+    key: 'mousepad_white_8x7', id: 'mousepad_white_8x7', name: 'Mousepad (8″×7″)',
+    placement: 'default', printRatio: '6:5', renderFn: renderTimeSeries,
+  },
+];
 
 // ── Examples ──────────────────────────────────────────────────────────────────
 
@@ -77,7 +80,34 @@ export const EXAMPLES: Example[] = [
       'Preview a chart on a product in the 3D viewer without adding it to the cart. ' +
       'Pass any chart as an active_item — the viewer renders it on the product instantly. ' +
       'Useful for "try before you buy" flows or live chart previews.',
-    previewProducts: [CANVAS],
+    previewKeys: ['mug_black_11oz'],
+    snippets: {
+      chart: `\
+import * as Plot from '@observablehq/plot';
+
+const svg = Plot.plot({
+  marginLeft: 40,
+  marks: [
+    Plot.rectY(data, Plot.binX({ y: 'count' }, { x: 'eruptions', fill: 'steelblue' })),
+    Plot.ruleY([0]),
+  ],
+}) as SVGSVGElement;`,
+      store: `\
+import { openWithViz } from 'chartout/store';
+
+// Rasterises the SVG and loads it into the store — user picks product.
+// Defaults to mug_black_11oz; the user can switch product inside the store.
+await openWithViz(model, svg, 'Histogram');`,
+    },
+  },
+
+  {
+    id: 'cartitem',
+    label: 'CartItem',
+    description:
+      'Add a single product to the cart with its chart already attached as the print texture. ' +
+      'Clicking the item in the 3D viewer cart switches to that product.',
+    previewKeys: ['canvas_10x10'],
     snippets: {
       chart: `\
 import * as Plot from '@observablehq/plot';
@@ -91,50 +121,11 @@ const svg = Plot.plot({
   ],
 }) as SVGSVGElement;`,
       store: `\
-import { svgToBytes } from './rasterise';
+import { openWithItem } from 'chartout/store';
 
-// Rasterise at canvas print resolution, 3900×3900 px (1:1 square)
-const bytes = svgToBytes(svg, 3900, 3900);
-
-// Push to the widget: no cart, just a live preview on the product
-model.set('active_item', {
-  id: 'canvas_10x10',
-  name: 'Canvas (10″×10″)',
-  placements: [{ id: 'default', content: bytes }],
-} satisfies ActiveItem);`,
-    },
-  },
-
-  {
-    id: 'cartitem',
-    label: 'CartItem',
-    description:
-      'Add a single product to the cart with its chart already attached as the print texture. ' +
-      'Clicking the item in the 3D viewer cart switches to that product.',
-    previewProducts: [MUG],
-    snippets: {
-      chart: `\
-import * as Plot from '@observablehq/plot';
-
-const svg = Plot.plot({
-  marginLeft: 40,
-  marks: [
-    Plot.rectY(data, Plot.binX({ y: 'count' }, { x: 'eruptions', fill: 'steelblue' })),
-    Plot.ruleY([0]),
-  ],
-}) as SVGSVGElement;`,
-      store: `\
-import { svgToBytes } from './rasterise';
-
-// Rasterise at mug print resolution, 2700×1050 px (~2.6:1 wide)
-const bytes = svgToBytes(svg, 2700, 1050);
-
-model.set('cart', [{
-  id: 'mug_black_11oz',
-  name: 'Mug (11 oz)',
-  quantity: 1,
-  placements: [{ id: 'default', content: bytes }],
-} satisfies CartItem]);`,
+// Rasterises the SVG and opens the store with the canvas pre-selected.
+// productId must be a valid id from GET /v1/products.
+await openWithItem(model, 'canvas_10x10', svg, 'Scatter density');`,
     },
   },
 
@@ -142,28 +133,31 @@ model.set('cart', [{
     id: 'cart',
     label: 'Cart',
     description:
-      'Fill the cart with several products at once, each with its own chart rendered at the ' +
-      'correct pixel dimensions for its placement. Switch between items in the viewer to see each product.',
-    previewProducts: [CANVAS, MOUSEPAD, MUG],
+      'Fill the cart with several products at once, each with its own chart. ' +
+      'Design each chart at its natural proportions — svgToBytes preserves the aspect ratio. ' +
+      'Switch between items in the viewer to see each product.',
+    previewKeys: ['canvas_10x10', 'mousepad_white_8x7', 'mug_black_11oz'],
     snippets: {
       chart: `\
 import * as Plot from '@observablehq/plot';
 
-// One chart per product, each rendered at its own aspect ratio
+// Design each chart at proportions that suit the data, not the product.
+// The widget handles fitting the chart onto the product's placement area.
 const canvasSvg   = Plot.plot({ marks: [Plot.density(data, {...}), Plot.dot(data, {...})]   }) as SVGSVGElement;
 const mousepadSvg = Plot.plot({ marks: [Plot.areaY(series, {...}), Plot.lineY(series, {...})] }) as SVGSVGElement;
 const mugSvg      = Plot.plot({ marks: [Plot.rectY(data, Plot.binX({...})), Plot.ruleY([])] }) as SVGSVGElement;`,
       store: `\
-import { svgToBytes } from './rasterise';
+import { openWithCart, svgToBytes } from 'chartout/store';
 
-const canvasBytes   = svgToBytes(canvasSvg,   3900, 3900);  // 1:1 square
-const mousepadBytes = svgToBytes(mousepadSvg, 2700, 2250);  // ~1.2:1
-const mugBytes      = svgToBytes(mugSvg,      2700, 1050);  // ~2.6:1
+// Rasterise each chart at its own natural aspect ratio, then build the cart.
+const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+  svgToBytes(canvasSvg), svgToBytes(mugSvg), svgToBytes(mousepadSvg),
+]);
 
-model.set('cart', [
+openWithCart(model, [
   { id: 'canvas_10x10',       name: 'Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes   }] },
-  { id: 'mousepad_white_8x7', name: 'Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
   { id: 'mug_black_11oz',     name: 'Mug (11 oz)',      quantity: 1, placements: [{ id: 'default', content: mugBytes      }] },
+  { id: 'mousepad_white_8x7', name: 'Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
 ] satisfies CartItem[]);`,
     },
   },

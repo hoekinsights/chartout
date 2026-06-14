@@ -1,13 +1,13 @@
 /**
  * Observable Plot chart definitions used in the reference examples.
  *
- * These are plain functions: they accept a container element and target
- * dimensions, append an <svg> to the container, and return it. The same
- * function is called twice — once at print resolution to produce the bytes
- * for the widget, and once at screen resolution for the inline preview.
+ * Each function accepts a container element and display dimensions, appends
+ * an <svg> to the container, and returns it. The same SVG element is both
+ * displayed as the inline preview and passed to svgToBytes() for rasterisation
+ * — one render, one element, two uses.
  *
- * You can swap these out for any chart library (D3, Vega-Lite, ECharts…)
- * as long as the function returns an SVGSVGElement.
+ * Swap these out for any chart library (D3, Vega-Lite, ECharts…) as long as
+ * the function returns an SVGSVGElement.
  */
 
 import * as Plot from '@observablehq/plot';

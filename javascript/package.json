@@ -1,6 +1,6 @@
 {
   "name": "chartout-example",
-  "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -8,9 +8,8 @@
   },
   "dependencies": {
     "@anywidget/react": "^0.2.0",
-    "@nick/resvg": "npm:@jsr/nick__resvg@^0.1.0-rc.1",
-    "@observablehq/plot": "^0.6.17",
-    "chartout": "file:../../chartout-app",
+"@observablehq/plot": "^0.6.17",
+    "chartout": "^1.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
