@@ -4,7 +4,7 @@
  * Each function accepts a container element and display dimensions, appends
  * an <svg> to the container, and returns it. The same SVG element is both
  * displayed as the inline preview and passed to svgToBytes() for rasterisation
- * — one render, one element, two uses.
+ * One render, one element, two uses.
  *
  * Swap these out for any chart library (D3, Vega-Lite, ECharts…) as long as
  * the function returns an SVGSVGElement.
@@ -17,7 +17,7 @@ import * as Plot from '@observablehq/plot';
 import FAITHFUL from './faithful.json';
 const FAITHFUL_INDEXED = FAITHFUL.map((d, i) => ({ ...d, i }));
 
-/** Scatter-density plot — good for square products (canvas, poster). */
+/** Scatter-density plot, good for square products (canvas, poster). */
 export function renderScatterDensity(
   container: HTMLElement,
   width: number,
@@ -36,7 +36,7 @@ export function renderScatterDensity(
   return svg;
 }
 
-/** Histogram — good for wide products (mug, t-shirt). */
+/** Histogram, good for wide products (mug, t-shirt). */
 export function renderHistogram(
   container: HTMLElement,
   width: number,
@@ -54,19 +54,25 @@ export function renderHistogram(
   return svg;
 }
 
-/** Area + line time series — good for near-square products (mousepad). */
-export function renderTimeSeries(
+/** Interference pattern raster, good for near-square products (mousepad). */
+export function renderRaster(
   container: HTMLElement,
   width: number,
   height: number,
 ): SVGSVGElement {
   container.innerHTML = '';
+  const cols = 240, rows = 200;
+  const values = Float64Array.from({ length: cols * rows }, (_, i) => {
+    const x = (i % cols) / cols * 4 - 2;
+    const y = Math.floor(i / cols) / rows * 4 - 2;
+    return Math.sin(x * 3) * Math.cos(y * 3) + Math.sin((x + y) * 2);
+  });
   const svg = Plot.plot({
-    width, height, marginLeft: 40,
+    width, height,
+    axis: null,
+    color: { scheme: 'RdBu' },
     marks: [
-      Plot.areaY(FAITHFUL_INDEXED, { x: 'i', y: 'waiting', fill: 'steelblue', fillOpacity: 0.15 }),
-      Plot.lineY(FAITHFUL_INDEXED, { x: 'i', y: 'waiting', stroke: 'steelblue', strokeWidth: 1 }),
-      Plot.ruleY([0]),
+      Plot.raster(values, { width: cols, height: rows, x1: -2, x2: 2, y1: -2, y2: 2 }),
     ],
   }) as unknown as SVGSVGElement;
   container.append(svg);

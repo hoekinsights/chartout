@@ -4,10 +4,9 @@
  * This file is the tutorial. It shows the three steps needed to drive the
  * chartout widget from a React application:
  *
- *   1. createChartoutModel()       — create the state bridge
- *   2. svgToBytes(svg)             — rasterise your chart at print resolution
- *   3. model.set('active_item', …) — push bytes into the widget
- *      model.set('cart', […])
+ *   1. createChartoutModel()   creates the state bridge
+ *   2. svgToBytes(svg)         rasterises your chart at print resolution
+ *   3. openWithViz(model, …)   opens the store (or openWithItem / openWithCart)
  *
  * The three tabs demonstrate the three integration patterns (VizLike,
  * CartItem, Cart). Each one is a different combination of model.set calls.
@@ -37,12 +36,15 @@ export function App() {
   // to update what the 3D viewer displays.
   const model = useMemo(() => createChartoutModel({}), []);
 
-  const [tab, setTab] = useState<ExampleId>('vizlike');
+  const hashId = window.location.hash.slice(1) as ExampleId;
+  const [tab, setTab] = useState<ExampleId>(
+    EXAMPLES.some(e => e.id === hashId) ? hashId : 'vizlike'
+  );
   const example = EXAMPLES.find(e => e.id === tab)!;
   const previewProducts = example.previewKeys.map(k => PRODUCTS.find(p => p.key === k)!);
 
   // ── Step 2: Render all charts into their preview divs on mount ───────────
-  // One render per product — the same SVG element is both displayed and
+  // One render per product. The same SVG element is both displayed and
   // passed to the chartout/store helpers for rasterisation.
   const svgEls = useRef(new Map<string, SVGSVGElement>());
 
@@ -64,15 +66,15 @@ export function App() {
     const mousepad = PRODUCTS.find(p => p.key === 'mousepad_white_8x7')!;
 
     if (id === 'vizlike') {
-      // openWithViz — user picks product inside the store (defaults to mug_black_11oz)
+      // openWithViz: user picks product inside the store (defaults to mug_black_11oz)
       await openWithViz(model, svgEls.current.get('mug_black_11oz')!, mug.name);
 
     } else if (id === 'cartitem') {
-      // openWithItem — specific product pre-selected
+      // openWithItem: specific product pre-selected
       await openWithItem(model, canvas.id, svgEls.current.get('canvas_10x10')!, canvas.name);
 
     } else {
-      // openWithCart — pre-built cart with multiple products
+      // openWithCart: pre-built cart with multiple products
       const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
         svgToBytes(svgEls.current.get('canvas_10x10')!),
         svgToBytes(svgEls.current.get('mug_black_11oz')!),
@@ -89,9 +91,10 @@ export function App() {
   const handleTabClick = (id: ExampleId) => {
     setTab(id);
     updateWidget(id);
+    window.location.hash = id;
   };
 
-  // Preview containers — always mounted, toggled with display:none.
+  // Preview containers, always mounted, toggled with display:none.
   // Charts are rendered into these on mount and persist across tab switches.
   const previewEls = useRef(new Map<string, HTMLDivElement | null>());
 
@@ -109,7 +112,7 @@ export function App() {
         chartout · reference implementation
       </p>
       <p style={{ fontSize: 14, color: '#555', margin: '0 0 24px', lineHeight: 1.6 }}>
-        Three patterns for bringing a chart into the store, pick the one that fits your workflow.
+        Three ways to turn a chart into a printed product. Pick the pattern that fits your use case.
       </p>
 
       {/* Tab bar */}
@@ -141,7 +144,7 @@ export function App() {
         {example.description}
       </p>
 
-      {/* Chart previews — always mounted, toggled with display */}
+      {/* Chart previews, always mounted, toggled with display */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 16 }}>
         {PRODUCTS.map(p => {
           const visible = previewProducts.some(pp => pp.key === p.key);
@@ -158,26 +161,23 @@ export function App() {
         })}
       </div>
 
-      {/* Chart definition — collapsible, users already know their chart library */}
-      <details style={{ marginBottom: 8 }}>
-        <summary style={{
-          fontSize: 11, color: '#999', cursor: 'pointer', userSelect: 'none',
-          listStyle: 'none', display: 'inline-flex', alignItems: 'center',
-          gap: 4, marginBottom: 6, letterSpacing: '0.03em',
-        }}>
-          chart definition
-        </summary>
-        <pre style={snippetStyle('#f7f7f7', '#555')}>
-          {example.snippets.chart}
-        </pre>
-      </details>
+      {/* Your chart */}
+      <p style={{ fontSize: 11, color: '#999', margin: '0 0 6px', letterSpacing: '0.03em' }}>
+        your chart (any library)
+      </p>
+      <pre style={{ ...snippetStyle('#f7f7f7', '#555'), marginBottom: 8 }}>
+        {example.snippets.chart}
+      </pre>
 
-      {/* Store integration — always visible, this is the chartout-specific part */}
+      {/* ChartOut integration */}
+      <p style={{ fontSize: 11, color: '#999', margin: '0 0 6px', letterSpacing: '0.03em' }}>
+        chartout integration
+      </p>
       <pre style={{ ...snippetStyle('#f7f7f7', '#333'), marginBottom: 16 }}>
         {example.snippets.store}
       </pre>
 
-      {/* The widget — stays mounted; model state drives what it displays */}
+      {/* The widget stays mounted; model state drives what it displays */}
       <ChartoutWidget model={model} style={{ width: '100%' }} />
     </div>
   );
