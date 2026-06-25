@@ -120,7 +120,7 @@ def viz_to_active_item(viz: VizLike) -> ActiveItem:
     png_data = chart_to_png(viz)
     return ActiveItem(
         name="Canvas",
-        id="canvas_10x10",
+        id="mug_black_11oz",
         placements=[Placement(placement_id="default", content=png_data)],
     )
 
@@ -231,7 +231,7 @@ def item(
 ) -> CartItem:
     """Create a CartItem for a single-placement product with minimal boilerplate.
 
-    Use an id from chartout.products() as product_id (e.g. `"canvas_10x10"`, `"mousepad_white_8x7"`).
+    Use an id from chartout.products() as product_id (e.g. `"mug_black_11oz"`, `"canvas_10x10"`).
     content must be VizLike (Altair, matplotlib, Plotly, pyobsplot) or bytes/bytearray (image data).
     Positioning kwargs (horizontal, vertical, scale, dx, dy) are forwarded to PlacementPosition.
     Set validate=False to skip the API check when product_id is already known to be valid.
@@ -270,7 +270,7 @@ def viz_to_cart_item(viz: VizLike) -> CartItem:
     png_data = chart_to_png(viz)
     placement = Placement(placement_id="default", content=png_data)
     return CartItem(
-        id="canvas_10x10",
+        id="mug_black_11oz",
         name="VizLike Item",
         placements=[placement],
         quantity=1,
