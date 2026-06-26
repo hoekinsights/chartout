@@ -15,3 +15,11 @@ export const CartDemo = dynamic(
   () => import('./CartDemo').then((m) => ({ default: m.CartDemo })),
   { ssr: false },
 )
+export const ChartPreview = dynamic(
+  () => import('./GettingStartedDemo').then((m) => ({ default: m.ChartPreview })),
+  { ssr: false },
+)
+export const StorePreview = dynamic(
+  () => import('./GettingStartedDemo').then((m) => ({ default: m.StorePreview })),
+  { ssr: false },
+)

@@ -3,7 +3,7 @@ title: Getting started
 description: Turn your charts into physical products with chartout.
 ---
 
-**chartout** converts data visualizations into print-ready products like mugs, canvases, posters and mousepads. You pass a chart, the widget lets the user preview it on a 3D product model, adjust the placement, and check out.
+**ChartOut** converts data visualizations into print-ready products like mugs, canvases, posters and mousepads. You pass a chart, the widget lets the user preview it on a 3D product model, adjust the placement, and check out.
 
 ## Highlights
 
@@ -14,25 +14,34 @@ description: Turn your charts into physical products with chartout.
 
 ## Quick example
 
+import { ChartPreview, StorePreview } from '@/components/demo'
+
 ```python
 import altair as alt
-import pandas as pd
-import chartout
+from altair.datasets import data
 
-chart = (
-    alt.Chart(pd.DataFrame({'x': range(10), 'y': range(10)}))
-    .mark_line()
-    .encode(x='x', y='y')
+source = data.movies.url
+
+chart = alt.Chart(source).mark_bar().encode(
+    alt.X("IMDB Rating:Q").bin(maxbins=20).scale(domain=[1, 10]),
+    alt.Y('count()'),
+    alt.Color("IMDB Rating:Q").bin(maxbins=20).scale(scheme='pinkyellowgreen')
 )
-
-store = chartout.Store()
-store.add(chart)
-store  # renders the widget inline in Jupyter
+chart
 ```
 
-![ChartOut store widget](/store.png)
+<ChartPreview />
 
-The chartout widget opens inline. From there you can browse products, preview your chart, adjust placement, and check out.
+```python
+import chartout
+
+store = chartout.Store(chart)
+store  # renders the widget inline in a notebook environment
+```
+
+<StorePreview />
+
+From there you can browse products, preview your chart, adjust placement, and check out.
 
 ## What's next
 

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.20.1.json",
+  "config": {
+    "view": {
+      "continuousHeight": 300,
+      "continuousWidth": 300
+    }
+  },
+  "data": {
+    "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/movies.json"
+  },
+  "encoding": {
+    "color": {
+      "bin": {
+        "maxbins": 20
+      },
+      "field": "IMDB Rating",
+      "scale": {
+        "scheme": "pinkyellowgreen"
+      },
+      "type": "quantitative"
+    },
+    "x": {
+      "bin": {
+        "maxbins": 20
+      },
+      "field": "IMDB Rating",
+      "scale": {
+        "domain": [
+          1,
+          10
+        ]
+      },
+      "type": "quantitative"
+    },
+    "y": {
+      "aggregate": "count",
+      "type": "quantitative"
+    }
+  },
+  "mark": {
+    "type": "bar"
+  }
+}

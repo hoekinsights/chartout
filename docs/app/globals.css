@@ -1,1 +1,19 @@
 @import 'fumadocs-ui/style.css';
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+:root {
+  --color-fd-primary: hsl(245, 75%, 59%);
+  --color-fd-primary-foreground: hsl(0, 0%, 100%);
+  --color-fd-background: hsl(0, 0%, 100%);
+  --color-fd-card: hsl(0, 0%, 100%);
+}
+
+body {
+  font-family: "Source Sans 3", sans-serif;
+  color: #5f5e8d;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Fraunces", serif;
+  color: #1b195d;
+}
