@@ -1,0 +1,91 @@
+---
+title: API reference
+description: Full reference for the chartout JavaScript package.
+---
+
+## `createChartoutModel`
+
+```ts
+import { createChartoutModel } from 'chartout'
+
+const model = createChartoutModel({})
+```
+
+Creates the state bridge between your code and the widget. Pass the returned `model` to both `ChartoutWidget` and the store functions.
+
+## `chartout/store`
+
+### `openWithViz(model, svgElement, title)`
+
+Opens the store with a chart and lets the user pick a product.
+
+```ts
+await openWithViz(model, svgElement, 'My chart')
+```
+
+### `openWithItem(model, productId, svgElement, title)`
+
+Opens the store with a specific product pre-selected.
+
+```ts
+await openWithItem(model, 'canvas_10x10', svgElement, 'My Canvas')
+```
+
+### `openWithCart(model, items)`
+
+Opens the store directly on the cart review screen.
+
+```ts
+openWithCart(model, items satisfies CartItem[])
+```
+
+### `svgToBytes(svgElement, resolution?)`
+
+Rasterises an SVG element to PNG bytes suitable for upload.
+
+```ts
+const bytes = await svgToBytes(svgElement)        // 3000 px on long edge
+const bytes = await svgToBytes(svgElement, 4000)  // custom resolution
+```
+
+## `chartout/react`
+
+### `ChartoutWidget`
+
+```tsx
+import { ChartoutWidget } from 'chartout/react'
+
+<ChartoutWidget model={model} style={{ width: '100%' }} />
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `model` | `ChartoutModel` | State bridge from `createChartoutModel` |
+| `style` | `CSSProperties` | Inline styles applied to the widget container |
+| `className` | `string` | CSS class applied to the widget container |
+
+## `chartout/mount`
+
+### `mount(element, options)`
+
+Mounts the widget into a DOM element without React.
+
+```ts
+import { mount } from 'chartout/mount'
+
+mount(document.getElementById('store'), { model })
+```
+
+## `CartItem` type
+
+```ts
+interface CartItem {
+  id: string             // product ID from GET /v1/products
+  name: string           // display name shown in the widget
+  quantity: number
+  placements: {
+    id: string           // placement ID from GET /v1/products
+    content: Uint8Array  // PNG bytes from svgToBytes()
+  }[]
+}
+```

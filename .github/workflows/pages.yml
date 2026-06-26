@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'javascript/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -33,15 +33,15 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: javascript
+        working-directory: docs
 
       - name: Build
-        run: npx vite build --base=/chartout/
-        working-directory: javascript
+        run: npm run build
+        working-directory: docs
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: javascript/dist
+          path: docs/out
 
       - uses: actions/deploy-pages@v4
         id: deployment

@@ -1,0 +1,43 @@
+---
+title: API reference
+description: Full reference for the chartout Python package.
+---
+
+## `chartout.Store`
+
+```python
+store = chartout.Store(api_url="https://api.chartout.io")
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `api_url` | `str` | `"https://api.chartout.io"` | Base URL of the chartout API |
+
+### `store.add(chart, item_id=None, placement=None)`
+
+```python
+store.add(my_chart)
+store.add(my_chart, item_id='canvas_10x10')
+store.add(my_chart, placement=chartout.PlacementPosition(x=0.5, y=0.5, scale=1.2))
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `chart` | chart object | required | Any supported chart (Altair, matplotlib, Plotly, pyobsplot) |
+| `item_id` | `str \| None` | `None` | Pre-select a product by ID |
+| `placement` | `PlacementPosition \| None` | `None` | Override default chart placement |
+
+## `chartout.PlacementPosition`
+
+Fine-grained control over how a chart is placed on a product texture.
+
+```python
+pos = chartout.PlacementPosition(x=0.5, y=0.5, scale=1.0, rotation=0)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `x` | `float` | `0.5` | Horizontal center (0–1) |
+| `y` | `float` | `0.5` | Vertical center (0–1) |
+| `scale` | `float` | `1.0` | Scale multiplier |
+| `rotation` | `float` | `0` | Rotation in degrees |

@@ -1,0 +1,44 @@
+---
+title: Example usage
+description: Integration patterns for Python, VizLike, CartItem, and Cart.
+---
+
+There are three ways to open the store, depending on how much you want to decide for the user.
+
+## VizLike
+
+The user picks the product inside the widget. Use this for general "print this chart" buttons.
+
+```python
+import altair as alt
+import chartout
+
+my_chart = alt.Chart(...).mark_point().encode(...)
+
+store = chartout.Store(my_chart)
+store
+```
+
+## CartItem
+
+You pre-select a specific product. The store opens with that product already loaded.
+
+```python
+my_item = chartout.item('mug_green_11oz', chart, name='Green Mug with my Viz', quantity=1, validate=True)
+store = chartout.Store(my_item)
+store
+```
+
+## Cart
+
+You build the entire cart upfront.
+
+```python
+my_cart = cchartout.Cart([
+    chartout.item('mug_black_11oz', chart, horizontal='left', quantity=2),
+    chartout.item('canvas_16x32_horizontal', chart, horizontal='right', quantity=3),
+    chartout.item('mousepad_white_8x7', chart, horizontal='right', quantity=3)
+])
+store = chartout.Store(my_cart)
+store
+```

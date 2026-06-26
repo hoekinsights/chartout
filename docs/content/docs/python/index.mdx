@@ -1,0 +1,51 @@
+---
+title: Installation
+description: Install chartout and place your first order from a Jupyter notebook.
+---
+
+## Prerequisites
+
+- Python 3.10+
+- A running Jupyter environment (JupyterLab or Jupyter Notebook)
+- [Pixi](https://prefix.dev) for dependency management (recommended)
+
+## Installation
+
+```bash
+pixi add chartout
+```
+
+Or with pip:
+
+```bash
+pip install chartout
+```
+
+## Your first chart product
+
+```python
+import altair as alt
+import pandas as pd
+import chartout
+
+chart = (
+    alt.Chart(pd.DataFrame({'x': range(10), 'y': range(10)}))
+    .mark_line()
+    .encode(x='x', y='y')
+)
+
+store = chartout.Store()
+store.add(chart)
+store  # renders the widget inline in Jupyter
+```
+
+The chartout widget opens inline. Browse products, preview your chart in 3D, adjust placement, and check out.
+
+## Supported chart libraries
+
+| Library | Import |
+|---------|--------|
+| Altair | `import altair as alt` |
+| matplotlib | `import matplotlib.pyplot as plt` |
+| Plotly | `import plotly.graph_objects as go` |
+| pyobsplot | `import pyobsplot` |

@@ -1,0 +1,36 @@
+---
+title: How it works
+description: Architecture and design philosophy of ChartOut.
+---
+
+## Goal
+
+The goal of ChartOut is to treat data scientists as designers. Not by asking them to learn new tools, but by meeting them in the environments they already work in. That means Jupyter notebooks, code editors like Visual Studio Code, and modern browser-based interfaces like Marimo and Positron.
+
+## Built on anywidget
+
+ChartOut is built on top of [anywidget](https://anywidget.dev), which provides bidirectional communication between Python and JavaScript. This means the widget state, like the active chart, the selected product, and the cart contents, stays in sync between your notebook and the browser without any manual wiring.
+
+We use the react utility from anywidget to build the widget UI. This gives us access to the large React ecosystem on the JavaScript side while keeping the experience accessible to Python users. The anywidget-approach is inspired by [JupyterChart](https://altair-viz.github.io/user_guide/interactions/jupyter_chart.html) in Vega-Altair, which showed how a Python chart library can have a rich interactive widget in the notebook.
+
+## Chart library support
+
+ChartOut supports multiple chart libraries without making any of them a hard dependency. You can use Altair, matplotlib, Plotly or pyobsplot and ChartOut will handle the conversion to a print-ready image. This approach is inspired by [narwhals](https://github.com/narwhals-dev/narwhals), which handles dataframe library compatibility in a similar way.
+
+## JavaScript versioning
+
+The JavaScript widget bundle can be updated and patched independently of the Python package. This means bug fixes and visual improvements on the JavaScript side do not require a new Python release. The versioning strategy is inspired by how Vega-Altair integrates Vega-Lite and Vega on a major version level, keeping the coupling loose enough to move fast on both sides.
+
+## Payment
+
+Because payment needs to happen in a secure environment, the final checkout step opens a new browser window or tab at a hosted HTTPS address. This keeps sensitive payment data out of the localhost context and lets us use a proper payment provider without any security compromises.
+
+## Personal highlights
+
+Two things stand out as the most interesting challenges to solve.
+
+The first was figuring out how to map a chart image onto a 3D model as a texture. Getting the projection, seams and lighting to look right took a lot of iteration, and seeing a real chart render on a virtual mug at the right location was a good moment.
+
+The second was assembling the full stack. A Python package, an npm package, an API, a secure checkout page and email communication, all working together reliably for users anywhere in the world. Getting all those pieces to work together in a global setting was the most complete engineering challenge I have taken on as a side project. 
+
+Since data scientists create insights anytime, anywhere. 

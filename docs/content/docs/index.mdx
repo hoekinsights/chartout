@@ -1,0 +1,40 @@
+---
+title: Getting started
+description: Turn your charts into physical products with chartout.
+---
+
+**chartout** converts data visualizations into print-ready products like mugs, canvases, posters and mousepads. You pass a chart, the widget lets the user preview it on a 3D product model, adjust the placement, and check out.
+
+## Highlights
+
+- Works with Altair, matplotlib, Plotly, pyobsplot, Observable Plot, D3, ECharts, and any library that produces SVG
+- Three integration patterns: let the user pick a product, pre-select one for them, or build the entire cart upfront
+- Real-time 3D preview with placement controls
+- Ships to anywhere Printful delivers
+
+## Quick example
+
+```python
+import altair as alt
+import pandas as pd
+import chartout
+
+chart = (
+    alt.Chart(pd.DataFrame({'x': range(10), 'y': range(10)}))
+    .mark_line()
+    .encode(x='x', y='y')
+)
+
+store = chartout.Store()
+store.add(chart)
+store  # renders the widget inline in Jupyter
+```
+
+![ChartOut store widget](/store.png)
+
+The chartout widget opens inline. From there you can browse products, preview your chart, adjust placement, and check out.
+
+## What's next
+
+- **[Python](/docs/python)**, install the Python package and use chartout from Jupyter
+- **[JavaScript](/docs/javascript)**, embed the widget in a web app

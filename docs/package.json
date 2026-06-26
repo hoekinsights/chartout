@@ -1,0 +1,27 @@
+{
+  "name": "chartout-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@anywidget/react": "^0.2.0",
+    "@observablehq/plot": "^0.6.17",
+    "chartout": ">1.0.6",
+    "fumadocs-core": "^15.3.3",
+    "fumadocs-mdx": "^11.6.9",
+    "fumadocs-ui": "^15.3.3",
+    "next": "^15.3.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

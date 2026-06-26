@@ -1,0 +1,56 @@
+---
+title: Installation
+description: Install chartout and embed the widget in a web app.
+---
+
+## Installation
+
+```bash
+npm install chartout
+```
+
+Peer dependencies: `react` and `react-dom` are optional, only needed if you use `chartout/react`.
+
+## Quick start
+
+```ts
+import { createChartoutModel } from 'chartout'
+import { ChartoutWidget } from 'chartout/react'
+import { openWithViz } from 'chartout/store'
+
+// 1. Create the state bridge
+const model = createChartoutModel({})
+
+// 2. Render the widget
+<ChartoutWidget model={model} style={{ width: '100%' }} />
+
+// 3. Push your chart into the widget
+await openWithViz(model, svgElement, 'My chart title')
+```
+
+## Rasterising charts
+
+All chart libraries that produce an `SVGSVGElement` work with chartout. Pass the element to `svgToBytes` to rasterise it at print resolution:
+
+```ts
+import { svgToBytes } from 'chartout/store'
+
+const bytes = await svgToBytes(mySvgElement)        // PNG at 3000 px on the long edge
+const bytes = await svgToBytes(mySvgElement, 4000)  // higher resolution
+```
+
+## Vanilla JS / Vue / Svelte
+
+Use `chartout/mount` to render the widget without React:
+
+```ts
+import { createChartoutModel } from 'chartout'
+import { mount } from 'chartout/mount'
+import { openWithViz } from 'chartout/store'
+
+const model = createChartoutModel({})
+mount(document.getElementById('store'), { model })
+
+document.getElementById('print-btn').onclick = () =>
+  openWithViz(model, svgElement, 'My chart')
+```

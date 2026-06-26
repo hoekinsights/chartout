@@ -36,10 +36,14 @@ test_*.ipynb
 # Pixi
 .pixi/
 
-# JavaScript reference implementation
-javascript/node_modules/
-javascript/dist/
-javascript/.vite/
+# Docs
+docs/node_modules/
+docs/dist/
+docs/out/
+docs/.vite/
+docs/.next/
+docs/.claude/
+docs/.source/
 
 # IDE
 .idea/

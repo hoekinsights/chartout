@@ -1,5 +1,7 @@
 # ChartOut
 
+> Coming Soon!
+
 **Print Your Insights, Anytime, Anywhere**
 
 > With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
@@ -23,7 +25,7 @@ ChartOut turns data visualizations into beautiful, printed products. You create 
 
   ![ChartOut store widget](images/store.png)
 
-- **JavaScript / React** — full docs in [`javascript/`](javascript)
+- **JavaScript / React** — full docs in [`docs/`](docs)
 
 The interactive 3D widget is published separately as a npm package:
 [`chartout` on npm](https://www.npmjs.com/package/chartout)

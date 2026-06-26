@@ -1,0 +1,92 @@
+---
+title: Example usage
+description: Integration patterns, openWithViz, openWithItem, and openWithCart.
+---
+
+import { VizLikeDemo } from '@/components/demo'
+import { CartItemDemo } from '@/components/demo'
+import { CartDemo } from '@/components/demo'
+
+There are three ways to open the store, depending on how much you want to decide for the user.
+
+## openWithViz
+
+Use `openWithViz` when product selection belongs to the user. The widget opens on the default product and lets them switch to any other.
+
+Good for: **"print this" buttons**, live chart previews, exploratory dashboards.
+
+<VizLikeDemo />
+
+```ts
+import { createChartoutModel } from 'chartout'
+import { ChartoutWidget } from 'chartout/react'
+import { openWithViz } from 'chartout/store'
+
+const model = createChartoutModel({})
+
+await openWithViz(model, svgElement, 'My Histogram')
+```
+
+```tsx
+<ChartoutWidget model={model} style={{ width: '100%' }} />
+```
+
+## openWithItem
+
+Use `openWithItem` when your UI decides the product, not the user. The store opens with that product pre-selected and the chart already applied.
+
+Good for: **product-specific "print on this mug" actions**, embedded product pages, upsell flows.
+
+<CartItemDemo />
+
+```ts
+import { openWithItem } from 'chartout/store'
+
+// productId comes from GET /v1/products
+await openWithItem(model, 'canvas_10x10', svgElement, 'My Scatter density')
+```
+
+### Product IDs
+
+```ts
+const res = await fetch('https://api.chartout.io/v1/products')
+const products = await res.json()
+// products[0].id === 'canvas_10x10'
+// products[0].placements[0].id === 'default'
+// products[0].placements[0].print_ratio === '1:1'
+```
+
+Use the `print_ratio` to render your chart at proportions that suit the product's print area.
+
+## openWithCart
+
+Use `openWithCart` when you know exactly what the user wants to order. The store opens on the cart review screen, no product browsing needed.
+
+Good for: **bundles**, dashboards with multiple charts, "order all my charts" flows.
+
+<CartDemo />
+
+```ts
+import type { CartItem } from 'chartout'
+import { openWithCart, svgToBytes } from 'chartout/store'
+
+const [canvasBytes, mugBytes] = await Promise.all([
+  svgToBytes(canvasSvg),
+  svgToBytes(mugSvg),
+])
+
+openWithCart(model, [
+  {
+    id: 'canvas_10x10',
+    name: 'My Canvas (10″×10″)',
+    quantity: 1,
+    placements: [{ id: 'default', content: canvasBytes }],
+  },
+  {
+    id: 'mug_black_11oz',
+    name: 'My Mug (11 oz)',
+    quantity: 1,
+    placements: [{ id: 'default', content: mugBytes }],
+  },
+] satisfies CartItem[])
+```
