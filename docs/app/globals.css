@@ -1,5 +1,5 @@
 @import 'fumadocs-ui/style.css';
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Source+Sans+3:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
   --color-fd-primary: hsl(245, 75%, 59%);
@@ -9,11 +9,28 @@
 }
 
 body {
-  font-family: "Source Sans 3", sans-serif;
-  color: #5f5e8d;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: rgb(60, 60, 67);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Fraunces", serif;
-  color: #1b195d;
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: -0.64px;
+  color: #4E46DD;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 24px;
+  color: rgb(60, 60, 67);
+}
+
+h3, h4, h5, h6 {
+  color: rgb(60, 60, 67);
 }

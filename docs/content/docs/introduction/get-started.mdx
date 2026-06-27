@@ -1,0 +1,38 @@
+---
+title: Get Started
+description: Install ChartOut and turn your first chart into a product in minutes.
+---
+
+import { ChartPreview, StorePreview } from '@/components/demo'
+
+```python
+import altair as alt
+from altair.datasets import data
+
+source = data.movies.url
+
+chart = alt.Chart(source).mark_bar().encode(
+    alt.X("IMDB Rating:Q").bin(maxbins=20).scale(domain=[1, 10]),
+    alt.Y('count()'),
+    alt.Color("IMDB Rating:Q").bin(maxbins=20).scale(scheme='pinkyellowgreen')
+)
+chart
+```
+
+<ChartPreview />
+
+```python
+import chartout
+
+store = chartout.Store(chart)
+store  # renders the widget inline in a notebook environment
+```
+
+<StorePreview />
+
+From there you can browse products, preview your chart, adjust placement, and check out.
+
+## What's next
+
+- **[Python](/docs/python)** — install the Python package and use ChartOut from Jupyter
+- **[JavaScript](/docs/javascript)** — embed the widget in a web app

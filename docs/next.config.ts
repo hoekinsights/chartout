@@ -12,6 +12,7 @@ const config: NextConfig = {
       config.externals = [
         ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
         'skia-canvas',
+        'canvas',
       ]
     }
     return config

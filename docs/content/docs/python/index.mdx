@@ -1,51 +1,41 @@
 ---
 title: Installation
 description: Install chartout and place your first order from a Jupyter notebook.
+index: true
 ---
 
-## Prerequisites
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-- Python 3.10+
-- A running Jupyter environment (JupyterLab or Jupyter Notebook)
-- [Pixi](https://prefix.dev) for dependency management (recommended)
+ChartOut works inside any Jupyter-compatible environment, including JupyterLab, Jupyter Notebook, VS Code, Marimo, and Positron. It requires Python 3.11 or higher.
 
 ## Installation
 
-```bash
-pixi add chartout
-```
+Install chartout from PyPI using your preferred package manager. Both uv and pip are supported.
 
-Or with pip:
+<Tabs items={['uv', 'pip']}>
+  <Tab value="uv">
+    ```bash
+    uv add chartout
+    ```
+  </Tab>
+  <Tab value="pip">
+    ```bash
+    python -m pip install chartout
+    ```
+  </Tab>
+</Tabs>
 
-```bash
-pip install chartout
-```
+## Verifying the installation
 
-## Your first chart product
+After installing, confirm everything is working by checking the version:
 
 ```python
-import altair as alt
-import pandas as pd
 import chartout
-
-chart = (
-    alt.Chart(pd.DataFrame({'x': range(10), 'y': range(10)}))
-    .mark_line()
-    .encode(x='x', y='y')
-)
-
-store = chartout.Store()
-store.add(chart)
-store  # renders the widget inline in Jupyter
+print(chartout.__version__)
 ```
 
-The chartout widget opens inline. Browse products, preview your chart in 3D, adjust placement, and check out.
+## Dependencies
 
-## Supported chart libraries
+ChartOut has exactly two hard dependencies. [`anywidget`](https://anywidget.dev) provides the bridge between Python and the browser widget, and [`traitlets`](https://traitlets.readthedocs.io) handles the typed state that keeps them in sync. That is all. No chart library is required. ChartOut only uses the libraries you pass into it, following the "support all, depend on none" design.
 
-| Library | Import |
-|---------|--------|
-| Altair | `import altair as alt` |
-| matplotlib | `import matplotlib.pyplot as plt` |
-| Plotly | `import plotly.graph_objects as go` |
-| pyobsplot | `import pyobsplot` |
+Currently supported chart libraries are Altair and matplotlib. Pass a chart or figure directly to `chartout.Store` and ChartOut handles the conversion to a print-ready image. Support for Plotly, pyobsplot, and other libraries is planned. Contributions are welcome.

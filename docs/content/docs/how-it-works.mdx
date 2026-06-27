@@ -1,0 +1,52 @@
+---
+title: How it works
+description: Architecture and design philosophy of ChartOut.
+---
+
+## Architecture
+
+ChartOut is composed of three main parts.
+
+A Python package that integrates with visualization libraries and notebook environments. A JavaScript widget that provides the interactive product preview experience. A hosted checkout application that handles payment and order fulfillment securely.
+
+These parts are loosely coupled so they can evolve independently while presenting a single unified workflow.
+
+## Built on anywidget
+
+ChartOut is built on top of [anywidget](https://anywidget.dev), which provides bidirectional communication between Python and JavaScript.
+
+Widget state, including the active chart, selected product, placement, and cart contents, stays synchronized between Python and the browser without manual wiring.
+
+The UI is built with React using anywidget utilities, giving access to the React ecosystem while keeping the Python interface simple. The architecture is inspired by [JupyterChart](https://altair-viz.github.io/user_guide/interactions/jupyter_chart.html) in Vega Altair.
+
+## Chart library support
+
+ChartOut supports multiple chart libraries without making any of them a hard dependency.
+
+You can use Altair, matplotlib, Plotly, pyobsplot, or other libraries. On the Python side, charts are converted into print ready images. On the JavaScript side, SVG input is supported directly.
+
+This design is inspired by [Narwhals](https://github.com/narwhals-dev/narwhals), which provides compatibility across dataframe libraries without locking users into a single ecosystem.
+
+## JavaScript versioning
+
+The JavaScript widget bundle is versioned independently from the Python package.
+
+This allows frontend improvements and bug fixes without requiring a Python release.
+
+The approach is inspired by Vega Altair, where Vega Lite and Vega are integrated while remaining independently versioned.
+
+## Payment
+
+Payment happens in a secure hosted environment.
+
+When users proceed to checkout, ChartOut opens a new browser tab or window at a hosted HTTPS application. This keeps sensitive payment data out of the local notebook environment and enables secure integration with payment providers.
+
+## Personal highlights
+
+Two engineering challenges stand out.
+
+The first was mapping chart images onto 3D product models as textures. Getting projection, seams, placement, and lighting to feel natural required a lot of iteration.
+
+The second was building the full system. Python package, npm package, backend API, checkout system, email flow, and print fulfillment all working together reliably for users around the world.
+
+Data scientists create insights anywhere. ChartOut should be able to ship them anywhere.

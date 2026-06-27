@@ -5,7 +5,7 @@ import {
   DocsTitle,
   DocsDescription,
 } from 'fumadocs-ui/page'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import defaultMdxComponents from 'fumadocs-ui/mdx'
 import type { Metadata } from 'next'
 
@@ -15,6 +15,7 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const { slug } = await params
+  if (!slug || slug.length === 0) redirect('/docs/introduction/what-is-chartout')
   const page = source.getPage(slug)
   if (!page) notFound()
 
@@ -38,6 +39,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
+  if (!slug || slug.length === 0) return { title: 'ChartOut' }
   const page = source.getPage(slug)
   if (!page) notFound()
   return {
