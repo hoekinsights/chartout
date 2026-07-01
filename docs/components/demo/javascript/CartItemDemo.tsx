@@ -2,23 +2,23 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { createChartoutModel } from 'chartout'
 import { ChartoutWidget } from 'chartout/react'
-import { openWithViz } from 'chartout/store'
-import { renderHistogram } from './charts'
+import { openWithItem } from 'chartout/store'
+import { renderScatterDensity } from '@/components/demo/shared/charts'
 
-export function VizLikeDemo() {
+export function CartItemDemo() {
   const model = useMemo(() => createChartoutModel({}), [])
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
-    const svg = renderHistogram(containerRef.current, 280, 108)
-    openWithViz(model, svg, 'My Mug (11 oz)')
+    const svg = renderScatterDensity(containerRef.current, 180, 180)
+    openWithItem(model, 'canvas_10x10', svg, 'My Canvas (10″×10″)')
   }, [model])
 
   return (
     <div className="not-prose my-6 space-y-3">
       <p className="text-xs text-fd-muted-foreground uppercase tracking-wider">your chart</p>
-      <div ref={containerRef} className="border border-fd-border rounded bg-white" />
+      <div ref={containerRef} className="border border-fd-border rounded bg-white inline-block" />
       <p className="text-xs text-fd-muted-foreground uppercase tracking-wider">chartout widget</p>
       <ChartoutWidget model={model} style={{ width: '100%' }} />
     </div>

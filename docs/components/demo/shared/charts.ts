@@ -1,5 +1,5 @@
 import * as Plot from '@observablehq/plot'
-import FAITHFUL from './faithful.json'
+import FAITHFUL from '@/components/demo/shared/faithful.json'
 
 /** Scatter-density plot — good for square products (canvas, poster). */
 export function renderScatterDensity(container: HTMLElement, width: number, height: number): SVGSVGElement {

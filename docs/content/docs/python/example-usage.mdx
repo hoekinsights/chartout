@@ -1,45 +1,288 @@
 ---
 title: Example usage
+description: Integration patterns for VizLike, CartItem, and Cart with Altair, vgplot, and matplotlib.
 ---
 
-Integration patterns for Python, VizLike, CartItem, and Cart.
+import { Tab, Tabs } from '@/components/docs/Tabs'
+import { PythonChartOutput, PythonStoreOutput } from '@/components/demo/python'
 
-There are three ways to open the store, depending on how much you want to decide for the user.
+There are three ways to open the store, depending on how much you want to decide for the user. Each example follows a notebook-style flow: create a chart, display it, open the store, then display the widget.
 
 ## VizLike
 
 The user picks the product inside the widget. Use this for general "print this chart" buttons.
 
-```python
-import altair as alt
-import chartout
+<Tabs items={['Vega-Altair', 'Mosaic vgplot', 'matplotlib']}>
+  <Tab value="Vega-Altair">
+    ```python
+    import altair as alt
 
-my_chart = alt.Chart(...).mark_point().encode(...)
+    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
 
-store = chartout.Store(my_chart)
-store
-```
+    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
+        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
+        alt.Y("count()", title="Count"),
+    )
+    chart
+    ```
+
+    <PythonChartOutput library="altair" sessionId="altair-vizlike" />
+
+    ```python
+    import chartout
+
+    store = chartout.Store(chart)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="altair-vizlike" pattern="vizlike" />
+  </Tab>
+  <Tab value="Mosaic vgplot">
+    ```python
+    import vgplot as vg
+
+    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+
+    view = vg.plot(
+        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
+        vg.width(400),
+        vg.height(300),
+    )
+    view
+    ```
+
+    <PythonChartOutput library="vgplot" sessionId="vgplot-vizlike" />
+
+    vgplot support is planned — the store call below shows the intended API once available.
+
+    ```python
+    import chartout
+
+    store = chartout.Store(vg.spec())
+    store
+    ```
+
+    <PythonStoreOutput sessionId="vgplot-vizlike" pattern="vizlike" />
+  </Tab>
+  <Tab value="matplotlib">
+    ```python
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.hist(df["eruptions"], bins=20, color="steelblue")
+    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
+    fig
+    ```
+
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-vizlike" />
+
+    ```python
+    import chartout
+
+    store = chartout.Store(fig)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="matplotlib-vizlike" pattern="vizlike" />
+  </Tab>
+</Tabs>
 
 ## CartItem
 
 You pre-select a specific product. The store opens with that product already loaded.
 
-```python
-my_item = chartout.item('mug_green_11oz', chart, name='Green Mug with my Viz', quantity=1, validate=True)
-store = chartout.Store(my_item)
-store
-```
+<Tabs items={['Vega-Altair', 'Mosaic vgplot', 'matplotlib']}>
+  <Tab value="Vega-Altair">
+    We start with creating an Altair chart specification:
+
+    ```python
+    import altair as alt
+
+    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
+
+    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
+        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
+        alt.Y("count()", title="Count"),
+    )
+    chart
+    ```
+
+    <PythonChartOutput library="altair" sessionId="altair-cartitem" />
+
+    ```python
+    import chartout
+
+    item = chartout.item(
+        "mug_green_11oz",
+        chart,
+        name="Green Mug with my Viz",
+        quantity=1,
+    )
+    store = chartout.Store(item)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="altair-cartitem" pattern="cartItem" />
+  </Tab>
+  <Tab value="Mosaic vgplot">
+    ```python
+    import vgplot as vg
+
+    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+
+    view = vg.plot(
+        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
+        vg.width(400),
+        vg.height(300),
+    )
+    view
+    ```
+
+    <PythonChartOutput library="vgplot" sessionId="vgplot-cartitem" />
+
+    vgplot support is planned — the store call below shows the intended API once available.
+
+    ```python
+    import chartout
+
+    item = chartout.item(
+        "mug_green_11oz",
+        vg.spec(),
+        name="Green Mug with my Viz",
+        quantity=1,
+    )
+    store = chartout.Store(item)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="vgplot-cartitem" pattern="cartItem" />
+  </Tab>
+  <Tab value="matplotlib">
+    ```python
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.hist(df["eruptions"], bins=20, color="steelblue")
+    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
+    fig
+    ```
+
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cartitem" />
+
+    ```python
+    import chartout
+
+    item = chartout.item(
+        "mug_green_11oz",
+        fig,
+        name="Green Mug with my Viz",
+        quantity=1,
+    )
+    store = chartout.Store(item)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="matplotlib-cartitem" pattern="cartItem" />
+  </Tab>
+</Tabs>
 
 ## Cart
 
 You build the entire cart upfront.
 
-```python
-my_cart = cchartout.Cart([
-    chartout.item('mug_black_11oz', chart, horizontal='left', quantity=2),
-    chartout.item('canvas_16x32_horizontal', chart, horizontal='right', quantity=3),
-    chartout.item('mousepad_white_8x7', chart, horizontal='right', quantity=3)
-])
-store = chartout.Store(my_cart)
-store
-```
+<Tabs items={['Vega-Altair', 'Mosaic vgplot', 'matplotlib']}>
+  <Tab value="Vega-Altair">
+    ```python
+    import altair as alt
+
+    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
+
+    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
+        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
+        alt.Y("count()", title="Count"),
+    )
+    chart
+    ```
+
+    <PythonChartOutput library="altair" sessionId="altair-cart" />
+
+    ```python
+    import chartout
+
+    cart = chartout.Cart([
+        chartout.item("mug_black_11oz", chart, horizontal="left", quantity=2),
+        chartout.item("canvas_16x32_horizontal", chart, horizontal="right", quantity=3),
+        chartout.item("mousepad_white_8x7", chart, horizontal="right", quantity=3),
+    ])
+    store = chartout.Store(cart)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="altair-cart" pattern="cart" />
+  </Tab>
+  <Tab value="Mosaic vgplot">
+    ```python
+    import vgplot as vg
+
+    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+
+    view = vg.plot(
+        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
+        vg.width(400),
+        vg.height(300),
+    )
+    view
+    ```
+
+    <PythonChartOutput library="vgplot" sessionId="vgplot-cart" />
+
+    vgplot support is planned — the store call below shows the intended API once available.
+
+    ```python
+    import chartout
+
+    spec = vg.spec()
+    cart = chartout.Cart([
+        chartout.item("mug_black_11oz", spec, horizontal="left", quantity=2),
+        chartout.item("canvas_16x32_horizontal", spec, horizontal="right", quantity=3),
+        chartout.item("mousepad_white_8x7", spec, horizontal="right", quantity=3),
+    ])
+    store = chartout.Store(cart)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="vgplot-cart" pattern="cart" />
+  </Tab>
+  <Tab value="matplotlib">
+    ```python
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.hist(df["eruptions"], bins=20, color="steelblue")
+    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
+    fig
+    ```
+
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cart" />
+
+    ```python
+    import chartout
+
+    cart = chartout.Cart([
+        chartout.item("mug_black_11oz", fig, horizontal="left", quantity=2),
+        chartout.item("canvas_16x32_horizontal", fig, horizontal="right", quantity=3),
+        chartout.item("mousepad_white_8x7", fig, horizontal="right", quantity=3),
+    ])
+    store = chartout.Store(cart)
+    store
+    ```
+
+    <PythonStoreOutput sessionId="matplotlib-cart" pattern="cart" />
+  </Tab>
+</Tabs>

@@ -5,7 +5,7 @@ import type { Result } from 'vega-embed'
 import { createChartoutModel } from 'chartout'
 import { ChartoutWidget } from 'chartout/react'
 import { openWithViz } from 'chartout/store'
-import spec from '../../public/imdb-histogram.json'
+import spec from '../../../public/imdb-histogram.json'
 
 const EMBED_OPTIONS = {
   actions: { export: { svg: true, png: true }, source: false, compiled: false, editor: false },

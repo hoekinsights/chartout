@@ -6,6 +6,7 @@
   --color-fd-primary-foreground: hsl(0, 0%, 100%);
   --color-fd-background: hsl(0, 0%, 100%);
   --color-fd-card: hsl(0, 0%, 100%);
+  --color-fd-muted: hsl(0, 0%, 96%);
 }
 
 body {
@@ -33,4 +34,47 @@ h2 {
 
 h3, h4, h5, h6 {
   color: rgb(60, 60, 67);
+}
+
+/* Tab panels: flush content, no inner card padding */
+.chartout-tabs [role='tabpanel'] > :first-child {
+  margin-top: 0;
+}
+
+.chartout-tabs [role='tabpanel'] figure,
+.chartout-tabs [role='tabpanel'] pre {
+  border-radius: 0;
+}
+
+/* Tab label underline — scoped CSS because fumadocs prebuilt styles omit nested data-state variants */
+.chartout-tabs [role='tablist'] {
+  min-height: 48px;
+}
+
+.chartout-tabs [role='tab'] {
+  height: 48px;
+}
+
+.chartout-tabs .chartout-tab-label {
+  height: 100%;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  line-height: 48px;
+}
+
+.chartout-tabs [role='tab'][data-state='active'] .chartout-tab-label {
+  border-bottom-color: var(--color-fd-primary);
+}
+
+/* Code blocks: flat light-gray surface (matches tab header), no shadow */
+.prose figure.shiki,
+figure.shiki {
+  background-color: var(--color-fd-muted) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+figure.shiki pre {
+  background-color: transparent !important;
 }

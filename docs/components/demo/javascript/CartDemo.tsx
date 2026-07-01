@@ -4,7 +4,7 @@ import type { CartItem } from 'chartout'
 import { createChartoutModel } from 'chartout'
 import { ChartoutWidget } from 'chartout/react'
 import { openWithCart, svgToBytes } from 'chartout/store'
-import { renderScatterDensity, renderHistogram, renderRaster } from './charts'
+import { renderScatterDensity, renderHistogram, renderRaster } from '@/components/demo/shared/charts'
 
 export function CartDemo() {
   const model = useMemo(() => createChartoutModel({}), [])
