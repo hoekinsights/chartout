@@ -1,7 +1,7 @@
 import json
 import urllib.request
 from enum import StrEnum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, TypedDict, Union
 
 import anywidget
 import traitlets
@@ -21,6 +21,85 @@ from .support import (
 class StoreView(StrEnum):
     CART = "cart"
     CHECKOUT = "checkout"
+
+
+class Theme(TypedDict, total=False):
+    """Optional widget theme. Every field maps to a ``--chartout-*`` CSS variable.
+
+    Pass to ``Store(theme=...)``. Omitted fields fall back to the built-in
+    defaults. All values are CSS strings (e.g. ``"#db2777"``, ``"12px"``,
+    ``"'Inter', system-ui, sans-serif"``).
+
+    Fields (default):
+        font: Base font family (``system-ui, sans-serif``).
+        accent: Primary button / active colour (``#4f46e5``).
+        accent_hover: Primary button hover colour (``#4338ca``).
+        accent_fg: Text colour on accent background (``#ffffff``).
+        border_color: Borders / dividers (``#e0e0e0``).
+        border_width: Outer widget border width (``1px``).
+        radius: Outer widget corner radius (``8px``).
+        shadow: Outer widget box-shadow (``none``).
+        surface: Panel / card background (``#f8f9fa``).
+        viewer_bg: 3-D viewer canvas background (``#f5f5f5``).
+        fg: Primary text colour (``#374151``).
+        fg_muted: Secondary / muted text colour (``#6b7280``).
+        font_size: Base body text size (``14px``).
+        font_size_heading: Section heading size (``16px``).
+        font_size_status: Status / helper / label size (``12px``).
+        font_size_button: Button text size (``14px``).
+        font_weight: Body font weight (``400``).
+        font_weight_heading: Heading font weight (``600``).
+        line_height: Base line height (``1.4``).
+
+    Example:
+        >>> import chartout
+        >>> chartout.Store(theme={"accent": "#db2777", "radius": "12px"})
+    """
+
+    font: str
+    accent: str
+    accent_hover: str
+    accent_fg: str
+    border_color: str
+    border_width: str
+    radius: str
+    shadow: str
+    surface: str
+    viewer_bg: str
+    fg: str
+    fg_muted: str
+    font_size: str
+    font_size_heading: str
+    font_size_status: str
+    font_size_button: str
+    font_weight: str
+    font_weight_heading: str
+    line_height: str
+
+
+# Allowed theme keys, mirrors Theme above; used to reject typos at runtime.
+_THEME_KEYS = frozenset(Theme.__annotations__)
+
+
+def _theme_to_css(theme: Optional[Theme]) -> str:
+    """Build a scoped CSS rule overriding `--chartout-*` vars from a Theme dict.
+
+    Targets `[data-chartout-widget]` (the widget container) so the overrides win
+    over the runtime `:root` defaults and stay scoped to this widget.
+    """
+    if not theme:
+        return ""
+    unknown = set(theme) - _THEME_KEYS
+    if unknown:
+        raise ValueError(
+            f"Unknown theme key(s): {sorted(unknown)}. "
+            f"Valid keys: {sorted(_THEME_KEYS)}."
+        )
+    decls = "".join(
+        f"  --chartout-{key.replace('_', '-')}: {value};\n"
+        for key, value in theme.items()
+    )
+    return f"[data-chartout-widget] {{\n{decls}}}\n"
 
 
 # Helper Classes
@@ -53,6 +132,7 @@ class Store(anywidget.AnyWidget):
     """
 
     _esm = "https://cdn.jsdelivr.net/npm/chartout@1/bundle/Widget.js"
+    _css = ""
 
     cart = traitlets.List(
         trait=traitlets.Dict(
@@ -91,6 +171,7 @@ class Store(anywidget.AnyWidget):
         *,
         view: Union[StoreView, str] = StoreView.CART,
         shipping_location: Optional[Dict[str, str]] = None,
+        theme: Optional[Theme] = None,
         **kwargs,
     ):
         """Initialize the Store widget.
@@ -100,8 +181,15 @@ class Store(anywidget.AnyWidget):
             view: Initial view, either `'cart'` (default) or `'checkout'`.
             shipping_location: Pre-fills country/state in checkout,
                 e.g. `{'country': 'NL'}` or `{'country': 'US', 'state': 'CA'}`.
+            theme: Optional look-and-feel overrides. Each key maps to a
+                `--chartout-*` CSS variable, e.g.
+                `{'accent': '#db2777', 'radius': '12px'}`. See `Theme`.
         """
         super().__init__(**kwargs)
+        if theme is not None:
+            self._css = _theme_to_css(theme)
+        # Open checkout URL from kernel-side
+        self.on_msg(self._handle_frontend_msg)
         self.view = view
         if shipping_location is not None:
             self.shipping_location = shipping_location
@@ -137,6 +225,18 @@ class Store(anywidget.AnyWidget):
         self.cart = list(self.cart or []) + serialized
         if was_empty:
             self.active_item = cart_item_to_active_item(self.cart[0]).to_dict()
+
+    def _handle_frontend_msg(self, _widget: Any, content: Any, _buffers: Any) -> None:
+        """Handle messages sent from the widget front-end via model.send()."""
+        if not isinstance(content, dict):
+            return
+        # Open checkout URL from kernel-side
+        if content.get("type") == "open_url":
+            url = content.get("url")
+            if isinstance(url, str) and url.startswith(("https://")):
+                import webbrowser
+
+                webbrowser.open(url)
 
     def to_json(self):
         """Serialize the widget's state to a JSON-compatible dictionary."""

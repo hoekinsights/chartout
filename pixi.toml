@@ -16,8 +16,8 @@ chartout = { path = "./python", editable = true }
 [dependencies]
 python = ">=3.9"
 jupyterlab = "*"
-altair = "*"
-vl-convert-python = ">=1.7"
+altair = ">=6.2.2,<7"
+vl-convert-python = ">=2.0.0rc1,<3"
 anywidget = "*"
 numpy = "*"
 pillow = "*"

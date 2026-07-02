@@ -1,7 +1,7 @@
 __version__ = "1.0.0a2"
 
 from .models import CartItem, Horizontal, Placement, PlacementPosition, Vertical
-from .store import DEFAULT_STORE_URL, products, Store, StoreView
+from .store import DEFAULT_STORE_URL, products, Store, StoreView, Theme
 from .cart import Cart
 from .support import VizLike, viz_to_active_item, item
 
@@ -14,6 +14,7 @@ __all__ = [
     "products",
     "Store",
     "StoreView",
+    "Theme",
     "CartItem",
     "Horizontal",
     "Placement",
