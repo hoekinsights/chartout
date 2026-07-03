@@ -1,0 +1,161 @@
+---
+title: Integrations
+description: Embed chartout in React, vanilla JavaScript, Vue, and Svelte.
+---
+
+import { Tab, Tabs } from '@/components/docs/Tabs'
+
+Pick an embedding path based on your app stack. All paths share the same model and store helpers; only the mount step differs.
+
+| Your app | Import | You provide |
+|----------|--------|-------------|
+| React 19+ | `chartout/react` | `react`, `react-dom` |
+| Vanilla JS / static HTML | `chartout/mount` | nothing extra |
+| Vue | `chartout/mount` | nothing extra |
+| Svelte | `chartout/mount` | nothing extra |
+
+Use `chartout/react` in React apps. In other stacks, call `mount()` on a container element with the same model and store helpers. See [Dependencies](/docs/javascript/dependencies) for package exports and bundler notes.
+
+## Widget size
+
+The store UI currently has a fixed height of about 357px. That size matches VS Code notebook cell output, where chartout was first embedded. The layout is fully responsive in width; set the container width (e.g. `width: '100%'`).
+
+Flexible height may be supported in a future release. If that matters for your app, [open an issue](https://github.com/hoekinsights/chartout/issues).
+
+<Tabs items={['React', 'Vanilla JS', 'Vue', 'Svelte']}>
+  <Tab value="React">
+    Use when your app already runs React 19 or newer. The widget shares your React instance (no duplicate copy).
+
+    ```bash
+    npm install chartout react react-dom
+    ```
+
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithViz } from 'chartout/store'
+
+    const model = createChartoutModel({})
+
+    function App() {
+      return (
+        <>
+          <button onClick={() => openWithViz(model, svg, 'My chart')}>
+            Print this chart
+          </button>
+          <ChartoutWidget
+            model={model}
+            theme={{ accent: '#db2777', radius: '12px' }}
+            style={{ width: '100%' }}
+          />
+        </>
+      )
+    }
+    ```
+
+    **Gotchas**
+
+    - Install `react` and `react-dom` as peers; `chartout/react` does not bundle them.
+    - Set width on the container (e.g. `width: '100%'`). See [Widget size](#widget-size) above.
+    - Call `openWithViz`, `openWithItem`, or `openWithCart` after the widget is mounted (or anytime; state syncs through the model).
+  </Tab>
+  <Tab value="Vanilla JS">
+    Use for plain HTML, Electron renderers, or any page that can load an ES module.
+
+    ```html
+    <div id="store" style="width:100%"></div>
+    <button id="print-btn">Print this chart</button>
+    ```
+
+    ```ts
+    import { createChartoutModel } from 'chartout'
+    import { mount } from 'chartout/mount'
+    import { openWithViz } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    const { destroy } = mount(document.getElementById('store')!, {
+      model,
+      theme: { accent: '#db2777' },
+    })
+
+    document.getElementById('print-btn')!.onclick = () =>
+      openWithViz(model, svgElement, 'My chart')
+
+    // Optional cleanup when navigating away:
+    // destroy()
+    ```
+
+    **Gotchas**
+
+    - Call `destroy()` when removing the container from the page.
+    - Give the container a width before mounting. See [Widget size](#widget-size) above.
+  </Tab>
+  <Tab value="Vue">
+    Use `chartout/mount` with a container ref. Mount when the component appears; call `destroy()` when it is removed.
+
+    ```vue
+    <script setup lang="ts">
+    import { onMounted, onUnmounted, ref } from 'vue'
+    import { createChartoutModel } from 'chartout'
+    import { mount } from 'chartout/mount'
+    import { openWithViz } from 'chartout/store'
+
+    const container = ref<HTMLElement | null>(null)
+    let destroy = () => {}
+
+    onMounted(() => {
+      if (!container.value) return
+      const model = createChartoutModel({})
+      ;({ destroy } = mount(container.value, { model }))
+      // store model on a ref if you need openWith* from other handlers
+    })
+
+    onUnmounted(() => destroy())
+    </script>
+
+    <template>
+      <div ref="container" style="width:100%" />
+    </template>
+    ```
+
+    **Gotchas**
+
+    - Keep one model instance per widget; create it in `onMounted` or hoisted to module scope if the component never unmounts.
+    - Always call `destroy()` on unmount to release the widget.
+  </Tab>
+  <Tab value="Svelte">
+    Use `chartout/mount` with a bound container element. Mount in `onMount`; call `destroy()` in `onDestroy`.
+
+    ```svelte
+    <script lang="ts">
+    import { onMount, onDestroy } from 'svelte'
+    import { createChartoutModel } from 'chartout'
+    import { mount } from 'chartout/mount'
+    import { openWithViz } from 'chartout/store'
+
+    let container: HTMLDivElement
+    let destroy = () => {}
+
+    onMount(() => {
+      const model = createChartoutModel({})
+      ;({ destroy } = mount(container, { model }))
+    })
+
+    onDestroy(() => destroy())
+    </script>
+
+    <div bind:this={container} style="width:100%"></div>
+    ```
+
+    **Gotchas**
+
+    - Same lifecycle rules as Vue: one `destroy()` per mount.
+    - For SvelteKit, import `chartout/mount` only in client-side code (`+page.svelte` or `onMount`), not in universal server loads.
+  </Tab>
+</Tabs>
+
+## Related
+
+- [Dependencies](/docs/javascript/dependencies): exports, skia-canvas, SSR
+- [Example usage](/docs/javascript/example-usage): chart input patterns
+- [API reference](/docs/javascript/api-reference): `ChartoutWidget`, `mount`, `createChartoutModel`

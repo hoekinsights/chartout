@@ -3,16 +3,12 @@ import dynamic from 'next/dynamic'
 
 // chartout/react bundles skia-canvas which accesses `window` at module init time,
 // so demo components must be loaded client-only (ssr: false).
-export const VizLikeDemo = dynamic(
-  () => import('./VizLikeDemo').then((m) => ({ default: m.VizLikeDemo })),
+export const ChartOutput = dynamic(
+  () => import('./output').then((m) => ({ default: m.ChartOutput })),
   { ssr: false },
 )
-export const CartItemDemo = dynamic(
-  () => import('./CartItemDemo').then((m) => ({ default: m.CartItemDemo })),
-  { ssr: false },
-)
-export const CartDemo = dynamic(
-  () => import('./CartDemo').then((m) => ({ default: m.CartDemo })),
+export const StoreOutput = dynamic(
+  () => import('./output').then((m) => ({ default: m.StoreOutput })),
   { ssr: false },
 )
 export const ChartPreview = dynamic(

@@ -36,6 +36,28 @@ h3, h4, h5, h6 {
   color: rgb(60, 60, 67);
 }
 
+/* Article horizontal padding: 24px mobile, 32px md+ */
+#nd-page article {
+  --chartout-article-pad: 24px;
+  padding-inline: var(--chartout-article-pad) !important;
+}
+
+@media (min-width: 768px) {
+  #nd-page article {
+    --chartout-article-pad: 64px;
+    padding-inline: var(--chartout-article-pad) !important;
+  }
+}
+
+/* Full-bleed code blocks and tab headers on mobile — break out of article padding */
+@media (max-width: 767px) {
+  #nd-page article figure.shiki,
+  #nd-page article .chartout-tabs [role='tablist'] {
+    margin-inline: calc(-1 * var(--chartout-article-pad));
+    width: calc(100% + 2 * var(--chartout-article-pad));
+  }
+}
+
 /* Tab panels: flush content, no inner card padding */
 .chartout-tabs [role='tabpanel'] > :first-child {
   margin-top: 0;
@@ -49,6 +71,7 @@ h3, h4, h5, h6 {
 /* Tab label underline — scoped CSS because fumadocs prebuilt styles omit nested data-state variants */
 .chartout-tabs [role='tablist'] {
   min-height: 48px;
+  margin-bottom: 20px;
 }
 
 .chartout-tabs [role='tab'] {

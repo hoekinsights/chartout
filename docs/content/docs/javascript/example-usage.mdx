@@ -1,13 +1,12 @@
 ---
 title: Example usage
-description: Integration patterns, openWithViz, openWithItem, and openWithCart.
+description: Integration patterns, openWithViz, openWithItem, and openWithCart with Observable Plot and ECharts.
 ---
 
-import { VizLikeDemo } from '@/components/demo/javascript'
-import { CartItemDemo } from '@/components/demo/javascript'
-import { CartDemo } from '@/components/demo/javascript'
+import { Tab, Tabs } from '@/components/docs/Tabs'
+import { ChartOutput, StoreOutput } from '@/components/demo/javascript'
 
-There are three ways to open the store, depending on how much you want to decide for the user.
+There are three ways to open the store, depending on how much you want to decide for the user. Any chart library works as long as it can produce an `<svg>` element, the examples below show Observable Plot and ECharts (with its SVG renderer). Each example first renders a chart, then opens the store with it.
 
 ## openWithViz
 
@@ -15,21 +14,65 @@ Use `openWithViz` when product selection belongs to the user. The widget opens o
 
 Good for: **"print this" buttons**, live chart previews, exploratory dashboards.
 
-<VizLikeDemo />
+<Tabs items={['Observable Plot', 'ECharts']}>
+  <Tab value="Observable Plot">
+    ```ts
+    import * as Plot from '@observablehq/plot'
 
-```ts
-import { createChartoutModel } from 'chartout'
-import { ChartoutWidget } from 'chartout/react'
-import { openWithViz } from 'chartout/store'
+    const svg = Plot.plot({
+      marks: [
+        Plot.rectY(data, Plot.binX({ y: 'count' }, { x: 'eruptions', fill: 'steelblue' })),
+        Plot.ruleY([0]),
+      ],
+    })
+    ```
 
-const model = createChartoutModel({})
+    <ChartOutput sessionId="js-viz-plot" library="plot" pattern="vizlike" />
 
-await openWithViz(model, svgElement, 'My Histogram')
-```
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithViz } from 'chartout/store'
 
-```tsx
-<ChartoutWidget model={model} style={{ width: '100%' }} />
-```
+    const model = createChartoutModel({})
+    await openWithViz(model, svg, 'Old Faithful Eruptions')
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-viz-plot" pattern="vizlike" />
+  </Tab>
+  <Tab value="ECharts">
+    ```ts
+    import * as echarts from 'echarts'
+
+    const el = document.createElement('div')
+    const chart = echarts.init(el, null, { renderer: 'svg', width: 400, height: 220 })
+    chart.setOption({
+      animation: false, // draw the final frame synchronously so the export isn't empty
+      xAxis: { type: 'value' },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: histogram, itemStyle: { color: 'steelblue' } }],
+    })
+    const svg = el.querySelector('svg')!
+    ```
+
+    <ChartOutput sessionId="js-viz-echarts" library="echarts" pattern="vizlike" />
+
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithViz } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    await openWithViz(model, svg, 'Old Faithful Eruptions')
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-viz-echarts" pattern="vizlike" />
+  </Tab>
+</Tabs>
 
 ## openWithItem
 
@@ -37,56 +80,180 @@ Use `openWithItem` when your UI decides the product, not the user. The store ope
 
 Good for: **product-specific "print on this mug" actions**, embedded product pages, upsell flows.
 
-<CartItemDemo />
+<Tabs items={['Observable Plot', 'ECharts']}>
+  <Tab value="Observable Plot">
+    ```ts
+    import * as Plot from '@observablehq/plot'
 
-```ts
-import { openWithItem } from 'chartout/store'
+    const svg = Plot.plot({
+      inset: 10,
+      marks: [
+        Plot.density(data, { x: 'waiting', y: 'eruptions', stroke: 'steelblue' }),
+        Plot.dot(data, { x: 'waiting', y: 'eruptions', fill: 'currentColor', r: 1.5 }),
+      ],
+    })
+    ```
 
-// productId comes from GET /v1/products
-await openWithItem(model, 'canvas_10x10', svgElement, 'My Scatter density')
-```
+    <ChartOutput sessionId="js-item-plot" library="plot" pattern="cartItem" />
+
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithItem } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    // productId from products()
+    await openWithItem(model, 'canvas_10x10', svg, 'My Canvas (10″×10″)')
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-item-plot" pattern="cartItem" />
+  </Tab>
+  <Tab value="ECharts">
+    ```ts
+    import * as echarts from 'echarts'
+
+    const el = document.createElement('div')
+    const chart = echarts.init(el, null, { renderer: 'svg', width: 400, height: 400 })
+    chart.setOption({
+      animation: false,
+      xAxis: { type: 'value', scale: true },
+      yAxis: { type: 'value', scale: true },
+      series: [{ type: 'scatter', data: points, itemStyle: { color: 'steelblue' } }],
+    })
+    const svg = el.querySelector('svg')!
+    ```
+
+    <ChartOutput sessionId="js-item-echarts" library="echarts" pattern="cartItem" />
+
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithItem } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    // productId from products()
+    await openWithItem(model, 'canvas_10x10', svg, 'My Canvas (10″×10″)')
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-item-echarts" pattern="cartItem" />
+  </Tab>
+</Tabs>
 
 ### Product IDs
 
 ```ts
-const res = await fetch('https://api.chartout.io/v1/products')
-const products = await res.json()
-// products[0].id === 'canvas_10x10'
-// products[0].placements[0].id === 'default'
-// products[0].placements[0].print_ratio === '1:1'
+import { products } from 'chartout/store'
+
+const catalogue = await products()
+// catalogue[0].id === 'canvas_10x10'
+// catalogue[0].placements[0].id === 'default'
+// catalogue[0].placements[0].print_ratio === '1:1'
 ```
 
 Use the `print_ratio` to render your chart at proportions that suit the product's print area.
 
 ## openWithCart
 
-Use `openWithCart` when you know exactly what the user wants to order. The store opens on the cart review screen, no product browsing needed.
+Use `openWithCart` when you know exactly what the user wants to order. The store opens on the cart review screen, no product browsing needed. Each product can carry a different chart.
 
 Good for: **bundles**, dashboards with multiple charts, "order all my charts" flows.
 
-<CartDemo />
+<Tabs items={['Observable Plot', 'ECharts']}>
+  <Tab value="Observable Plot">
+    ```ts
+    import * as Plot from '@observablehq/plot'
 
-```ts
-import type { CartItem } from 'chartout'
-import { openWithCart, svgToBytes } from 'chartout/store'
+    // a different chart per product
+    const canvasSvg = Plot.plot({
+      marks: [
+        Plot.density(data, { x: 'waiting', y: 'eruptions', stroke: 'steelblue' }),
+        Plot.dot(data, { x: 'waiting', y: 'eruptions', fill: 'currentColor', r: 1.5 }),
+      ],
+    })
+    const mugSvg = Plot.plot({
+      marks: [
+        Plot.rectY(data, Plot.binX({ y: 'count' }, { x: 'eruptions', fill: 'steelblue' })),
+        Plot.ruleY([0]),
+      ],
+    })
+    const mousepadSvg = Plot.plot({
+      axis: null,
+      color: { scheme: 'RdBu' },
+      marks: [Plot.raster(values, { width: cols, height: rows, x1: -2, x2: 2, y1: -2, y2: 2 })],
+    })
+    ```
 
-const [canvasBytes, mugBytes] = await Promise.all([
-  svgToBytes(canvasSvg),
-  svgToBytes(mugSvg),
-])
+    <ChartOutput sessionId="js-cart-plot" library="plot" pattern="cart" />
 
-openWithCart(model, [
-  {
-    id: 'canvas_10x10',
-    name: 'My Canvas (10″×10″)',
-    quantity: 1,
-    placements: [{ id: 'default', content: canvasBytes }],
-  },
-  {
-    id: 'mug_black_11oz',
-    name: 'My Mug (11 oz)',
-    quantity: 1,
-    placements: [{ id: 'default', content: mugBytes }],
-  },
-] satisfies CartItem[])
-```
+    ```tsx
+    import type { CartItem } from 'chartout'
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithCart, svgToBytes } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+      svgToBytes(canvasSvg),
+      svgToBytes(mugSvg),
+      svgToBytes(mousepadSvg),
+    ])
+
+    openWithCart(model, [
+      { id: 'canvas_10x10',       name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes }] },
+      { id: 'mug_black_11oz',     name: 'My Mug (11 oz)',      quantity: 1, placements: [{ id: 'default', content: mugBytes }] },
+      { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
+    ] satisfies CartItem[])
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-cart-plot" pattern="cart" />
+  </Tab>
+  <Tab value="ECharts">
+    ```ts
+    import * as echarts from 'echarts'
+
+    // render any ECharts option to an <svg> via the SVG renderer
+    function echartsSvg(option: echarts.EChartsOption, width: number, height: number) {
+      const el = document.createElement('div')
+      // animation: false draws the final frame synchronously so the export isn't empty
+      echarts.init(el, null, { renderer: 'svg', width, height }).setOption({ animation: false, ...option })
+      return el.querySelector('svg')!
+    }
+
+    const canvasSvg   = echartsSvg(scatterOption, 800, 800)   // scatter
+    const mugSvg      = echartsSvg(histogramOption, 800, 320) // bar histogram
+    const mousepadSvg = echartsSvg(heatmapOption, 800, 660)   // heatmap
+    ```
+
+    <ChartOutput sessionId="js-cart-echarts" library="echarts" pattern="cart" />
+
+    ```tsx
+    import type { CartItem } from 'chartout'
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithCart, svgToBytes } from 'chartout/store'
+
+    const model = createChartoutModel({})
+    const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+      svgToBytes(canvasSvg),
+      svgToBytes(mugSvg),
+      svgToBytes(mousepadSvg),
+    ])
+
+    openWithCart(model, [
+      { id: 'canvas_10x10',       name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes }] },
+      { id: 'mug_black_11oz',     name: 'My Mug (11 oz)',      quantity: 1, placements: [{ id: 'default', content: mugBytes }] },
+      { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
+    ] satisfies CartItem[])
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+    ```
+
+    <StoreOutput sessionId="js-cart-echarts" pattern="cart" />
+  </Tab>
+</Tabs>

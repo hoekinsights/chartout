@@ -3,41 +3,339 @@ title: API reference
 description: Full reference for the chartout Python package.
 ---
 
-## `chartout.Store`
+The chartout Python API centres on a Jupyter widget (`Store`) that syncs cart state with the browser. Build cart lines with `item()` and `Cart`, pick products from `products()`, and pass a chart, item, or cart into `Store` to open the store.
 
 ```python
-store = chartout.Store(api_url="https://api.chartout.io")
+import chartout
+
+# chart: user picks product in the widget
+store = chartout.Store(my_chart)
+
+# CartItem: single product pre-selected
+store = chartout.Store(chartout.item(...))
+
+# Cart: cart with multiple items
+store = chartout.Store(chartout.Cart([...]))
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `api_url` | `str` | `"https://api.chartout.io"` | Base URL of the chartout API |
+**Supported charts.** Parameters named _content_ or an initial chart accept Altair charts, matplotlib or seaborn `Figure`, Plotly `Figure`, or pyobsplot `ObsplotWidget`. Charts are rasterised to PNG at 300 DPI. For static type checkers, `chartout.VizLike` is a type variable you can use in annotations; it is not a class you construct at runtime.
 
-### `store.add(chart, item_id=None, placement=None)`
+### On this page
+
+- [products](#products)
+- [item](#item)
+- [Placement](#placement)
+- [PlacementPosition](#placementposition)
+- [Cart](#cart)
+- [Store](#store)
+- [StoreView](#storeview)
+- [Theme](#theme)
+
+---
+
+## products
+
+`products()`
+
+Return the product catalogue from the ChartOut API. Result is cached per URL.
 
 ```python
-store.add(my_chart)
-store.add(my_chart, item_id='canvas_10x10')
-store.add(my_chart, placement=chartout.PlacementPosition(x=0.5, y=0.5, scale=1.2))
+products = chartout.products()
+# products[0]["id"] == "canvas_10x10"
+# products[0]["placements"][0]["id"] == "default"
+# products[0]["placements"][0]["print_ratio"] == "1:1"
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `chart` | chart object | required | Any supported chart (Altair, matplotlib, Plotly, pyobsplot) |
-| `item_id` | `str \| None` | `None` | Pre-select a product by ID |
-| `placement` | `PlacementPosition \| None` | `None` | Override default chart placement |
+The supported _parameters_ are:
 
-## `chartout.PlacementPosition`
+- _store_: Optional API URL override. Defaults to `chartout.DEFAULT_STORE_URL` (`https://api.chartout.io/v1/products/`).
 
-Fine-grained control over how a chart is placed on a product texture.
+---
+
+## item
+
+`item(product_id, content, name=None, quantity=1, placement_id="default", position=None, validate=True, **kwargs)`
+
+Create a `CartItem` for a single-placement product with minimal boilerplate.
 
 ```python
-pos = chartout.PlacementPosition(x=0.5, y=0.5, scale=1.0, rotation=0)
+item = chartout.item(
+    "mug_black_11oz",
+    chart,
+    name="My Mug (11 oz)",
+    quantity=2,
+    placement_id="default",
+    horizontal="center",
+    vertical="middle",
+    scale=1.0,
+)
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `x` | `float` | `0.5` | Horizontal center (0–1) |
-| `y` | `float` | `0.5` | Vertical center (0–1) |
-| `scale` | `float` | `1.0` | Scale multiplier |
-| `rotation` | `float` | `0` | Rotation in degrees |
+`content` must be a supported chart or `bytes` (PNG image data). Positioning kwargs (`horizontal`, `vertical`, `scale`, `dx`, `dy`) are forwarded to [`PlacementPosition`](#placementposition).
+
+The supported _parameters_ are:
+
+- _product_id_: Product id from `chartout.products()` (e.g. `"mug_black_11oz"`, `"canvas_10x10"`).
+- _content_: Supported chart or `bytes` / `bytearray` image data.
+- _name_: Display name in the widget. Defaults to `product_id`.
+- _quantity_: Line quantity (default `1`).
+- _placement_id_: Placement id from the product catalogue (default `"default"`).
+- _position_: Optional [`PlacementPosition`](#placementposition) instance. Alternative to passing alignment kwargs directly.
+- _validate_: When `True` (default), checks `product_id` against the live catalogue. Set `False` to skip the API call when the id is already known.
+
+Alignment kwargs (when _position_ is omitted): _horizontal_, _vertical_, _scale_, _dx_, _dy_.
+
+Returns a `CartItem` with a single [`Placement`](#placement). Prefer `item()` over constructing `CartItem` directly unless you need multiple placements per product.
+
+---
+
+## Placement
+
+`Placement(placement_id, content, position=None)`
+
+Dataclass for one print area on a product: catalogue placement id, chart or image content, and optional alignment. Each `CartItem` holds a list of `Placement` objects.
+
+Use [`item()`](#item) for single-placement products. Build `Placement` directly when a product has multiple print areas or you assemble a `CartItem` by hand.
+
+```python
+# Single placement (equivalent to item(), lower level)
+placement = chartout.Placement(
+    placement_id="default",
+    content=chart,
+    position=chartout.PlacementPosition(horizontal="left", scale=1.1),
+)
+
+cart_item = chartout.CartItem(
+    id="canvas_10x10",
+    name="My canvas",
+    placements=[placement],
+    quantity=1,
+)
+```
+
+Look up valid _placement_id_ values and _print_ratio_ per product with [`products()`](#products).
+
+The supported _parameters_ are:
+
+- _placement_id_: Placement id from the product catalogue (e.g. `"default"`).
+- _content_: Supported chart or `bytes` / `bytearray` image data. Converted to PNG when sent to the widget.
+- _position_: Optional [`PlacementPosition`](#placementposition) or position dict (as returned by `PlacementPosition.to_dict()`).
+
+---
+
+## PlacementPosition
+
+`PlacementPosition(horizontal="center", vertical="middle", scale=None, dx=None, dy=None)`
+
+Dataclass for aligning chart content on a product print area. Pass as _position_ on [`Placement`](#placement), to `item(position=...)`, or set alignment via kwargs on `item()`.
+
+```python
+pos = chartout.PlacementPosition(
+    horizontal=chartout.Horizontal.left,  # or "left"
+    vertical=chartout.Vertical.middle,    # or "middle"
+    scale=1.1,
+    dx=0.05,
+    dy=-0.02,
+)
+chartout.item("canvas_10x10", chart, position=pos)
+```
+
+The supported _parameters_ are:
+
+- _horizontal_: `Horizontal` enum or `"left"`, `"center"`, `"right"`. Default `"center"`.
+- _vertical_: `Vertical` enum or `"top"`, `"middle"`, `"bottom"`. Default `"middle"`.
+- _scale_: Optional zoom factor (float).
+- _dx_, _dy_: Optional normalized offsets (float).
+
+`Horizontal` and `Vertical` are exported `StrEnum`s with the same string values. Invalid strings raise `ValueError` at construction time.
+
+---
+
+## Cart
+
+`Cart(items=None)`
+
+A container for one or more `CartItem` instances. Pass a `Cart` to `Store` to open directly on the cart review screen.
+
+```python
+cart = chartout.Cart([
+    chartout.item("canvas_10x10", chart_a, name="Canvas"),
+    chartout.item("mug_black_11oz", chart_b, name="Mug", quantity=2),
+])
+store = chartout.Store(cart)
+```
+
+The supported _parameters_ are:
+
+- _items_: Optional list of `CartItem` instances to populate the cart on construction.
+
+### add
+
+`add(item)`
+
+Append to the cart. Accepts a `CartItem`, a list of `CartItem`s, or a supported chart (converted to a default mug line).
+
+```python
+cart.add(chartout.item("mousepad_white_8x7", chart))
+cart.add([item_a, item_b])
+```
+
+The supported _parameters_ are:
+
+- _item_: A `CartItem`, list of `CartItem`s, or supported chart.
+
+### remove
+
+`remove(*, index)`
+
+Remove a line by index.
+
+```python
+cart.remove(index=0)
+```
+
+The supported _parameters_ are:
+
+- _index_: Zero-based index of the line to remove.
+
+### to_dict
+
+`to_dict()`
+
+Serialize the cart to a dict (via `dataclasses.asdict`).
+
+```python
+data = cart.to_dict()
+```
+
+---
+
+## Store
+
+`Store(item=None, view=StoreView.CART, shipping_location=None, theme=None)`
+
+The `Store` widget manages cart state, the active product preview, checkout view, and shipping location. State is synced to the front-end via traitlets.
+
+```python
+import chartout
+
+store = chartout.Store(
+    chartout.item("canvas_10x10", chart, name="My canvas"),
+    view='cart',
+    shipping_location={"country": "NL"},
+    theme={"accent": "#db2777", "radius": "12px"},
+)
+store
+```
+
+The supported _parameters_ are:
+
+- _item_: Optional initial content. One of: a supported chart (user picks product in the widget), a `CartItem` from `chartout.item(...)`, or a `Cart` from `chartout.Cart([...])`.
+- _view_: Initial widget view: `"cart"` (default) or `"checkout"`. Use `StoreView.CART` / `StoreView.CHECKOUT`. See [StoreView](#storeview).
+- _shipping_location_: Pre-fills checkout country/state, e.g. `{"country": "NL"}` or `{"country": "US", "state": "CA"}`.
+- _theme_: Optional look-and-feel overrides. Each key maps to a `--chartout-*` CSS variable. See [Theme](#theme).
+
+### add_item
+
+`add_item(item)`
+
+Add a `CartItem` to the cart and sync the widget. If the cart was empty, also sets `active_item` to the new entry.
+
+```python
+store.add_item(chartout.item("mug_black_11oz", chart, name="My mug"))
+```
+
+The supported _parameters_ are:
+
+- _item_: A `CartItem` created with `chartout.item()`.
+
+### to_json
+
+`to_json()`
+
+Serialize widget state to a JSON-compatible dict (`cart`, `active_item`, `view`, `shipping_location`).
+
+```python
+state = store.to_json()
+```
+
+### from_json
+
+`from_json(data)`
+
+Restore widget state from a dict produced by `to_json()`.
+
+```python
+store.from_json(state)
+```
+
+The supported _parameters_ are:
+
+- _data_: Dict with keys `cart`, `active_item`, `view`, and/or `shipping_location`.
+
+### Traits
+
+Synced properties on the widget instance:
+
+- _cart_: List of serialized cart line dicts (product id, name, quantity, placements with PNG bytes).
+- _view_: Current view: `"cart"` or `"checkout"`.
+- _shipping_location_: `{"country": str, "state": str}` for checkout pre-fill.
+- _active_item_: Dict for the product shown in the 3D viewer, or `None`.
+- _active_texture_: Texture data written back from the widget (PNG bytes in a dict). Set by the front-end when the user adjusts placement.
+
+---
+
+## StoreView
+
+`StoreView` (StrEnum)
+
+Initial widget view passed to `Store(view=...)`. String literals work too.
+
+- `StoreView.CART` (`"cart"`): product picker and cart (default).
+- `StoreView.CHECKOUT` (`"checkout"`): checkout flow.
+
+---
+
+## Theme
+
+`Theme` (TypedDict)
+
+Optional widget styling. Pass a dict to `Store(theme=...)`. Every field maps to a `--chartout-*` CSS variable; omitted keys use built-in defaults. All values are CSS strings.
+
+```python
+store = chartout.Store(
+    chart,
+    theme={
+        "accent": "#db2777",
+        "accent_hover": "#be185d",
+        "radius": "12px",
+        "font": "'Inter', system-ui, sans-serif",
+    },
+)
+```
+
+The supported _fields_ are:
+
+| Field | Maps to | Default |
+|-------|---------|---------|
+| _font_ | `--chartout-font` | `system-ui, sans-serif` |
+| _accent_ | `--chartout-accent` | `#4f46e5` |
+| _accent_hover_ | `--chartout-accent-hover` | `#4338ca` |
+| _accent_fg_ | `--chartout-accent-fg` | `#ffffff` |
+| _border_color_ | `--chartout-border-color` | `#e0e0e0` |
+| _border_width_ | `--chartout-border-width` | `1px` |
+| _radius_ | `--chartout-radius` | `8px` |
+| _shadow_ | `--chartout-shadow` | `none` |
+| _surface_ | `--chartout-surface` | `#f8f9fa` |
+| _viewer_bg_ | `--chartout-viewer-bg` | `#f5f5f5` |
+| _fg_ | `--chartout-fg` | `#374151` |
+| _fg_muted_ | `--chartout-fg-muted` | `#6b7280` |
+| _font_size_ | `--chartout-font-size` | `14px` |
+| _font_size_heading_ | `--chartout-font-size-heading` | `16px` |
+| _font_size_status_ | `--chartout-font-size-status` | `12px` |
+| _font_size_button_ | `--chartout-font-size-button` | `14px` |
+| _font_weight_ | `--chartout-font-weight` | `400` |
+| _font_weight_heading_ | `--chartout-font-weight-heading` | `600` |
+| _line_height_ | `--chartout-line-height` | `1.4` |
+
+Unknown keys raise `ValueError` at construction time.

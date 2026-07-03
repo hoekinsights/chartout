@@ -3,54 +3,332 @@ title: API reference
 description: Full reference for the chartout JavaScript package.
 ---
 
-## `createChartoutModel`
+The chartout JavaScript API embeds the store widget in any web app. Create a state model with `createChartoutModel`, mount the widget with `ChartoutWidget` or `mount`, pick products from `products()`, rasterise charts with `svgToBytes`, and load content with `openWithViz`, `openWithItem`, or `openWithCart`.
+
+```ts
+import { createChartoutModel } from 'chartout'
+import { ChartoutWidget } from 'chartout/react'
+import { openWithViz, openWithItem, openWithCart } from 'chartout/store'
+
+const model = createChartoutModel({})
+
+// chart: user picks product in the widget
+await openWithViz(model, svg, 'My chart')
+
+// CartItem: single product pre-selected
+await openWithItem(model, 'canvas_10x10', svg, 'My Canvas')
+
+// cart: multiple items, review screen
+openWithCart(model, items)
+
+<ChartoutWidget model={model} style={{ width: '100%' }} />
+```
+
+**Supported charts.** Any library that renders an `<svg>` element works (Observable Plot, ECharts with the SVG renderer, D3, Vega, and others). Pass the SVG element to `svgToBytes` or the `openWith*` helpers, which rasterise it to PNG for upload. Set explicit `width` and `height` on the SVG (or use a library that sets them) so dimensions are readable.
+
+### On this page
+
+- [products](#products)
+- [svgToBytes](#svgtobytes)
+- [Placement](#placement)
+- [Position](#position)
+- [CartItem](#cartitem)
+- [createChartoutModel](#createchartoutmodel)
+- [openWithViz](#openwithviz)
+- [openWithItem](#openwithitem)
+- [openWithCart](#openwithcart)
+- [ChartoutWidget](#chartoutwidget)
+- [mount](#mount)
+- [StoreView](#storeview)
+- [ShippingLocation](#shippinglocation)
+- [Theme](#theme)
+
+---
+
+## products
+
+`products(options?)`
+
+Return the product catalogue from the ChartOut API. Import from `chartout/store`. Result is cached per URL.
+
+```ts
+import { products } from 'chartout/store'
+
+const catalogue = await products()
+// catalogue[0].id === 'canvas_10x10'
+// catalogue[0].placements[0].id === 'default'
+// catalogue[0].placements[0].print_ratio === '1:1'
+```
+
+The supported _parameters_ are:
+
+- _options.store_: Optional API URL override. Defaults to `DEFAULT_PRODUCTS_URL` (`https://api.chartout.io/v1/products/`).
+
+Use _print_ratio_ when sizing charts so proportions match each product's print area. Validate _productId_ values against this list before calling [`openWithItem`](#openwithitem).
+
+---
+
+## svgToBytes
+
+`svgToBytes(svgEl, targetLongEdge?)`
+
+Rasterise an SVG element to PNG bytes via `OffscreenCanvas`. Import from `chartout/store`.
+
+```ts
+import { svgToBytes } from 'chartout/store'
+
+const bytes = await svgToBytes(svg)           // 3000 px on long edge (default)
+const bytes = await svgToBytes(svg, 4000)     // custom resolution
+```
+
+The supported _parameters_ are:
+
+- _svgEl_: An `SVGSVGElement` with readable dimensions (`width`/`height` attributes or a `viewBox`).
+- _targetLongEdge_: Optional pixel size for the longest edge (default `3000`).
+
+Returns `Promise<Uint8Array>` suitable for [`Placement`](#placement) _content_. Throws if the SVG has no readable dimensions.
+
+---
+
+## Placement
+
+`Placement` (interface)
+
+One print area on a product: catalogue placement id and PNG content. Each [`CartItem`](#cartitem) holds a list of `Placement` objects.
+
+```ts
+import type { Placement } from 'chartout'
+
+const placement: Placement = {
+  id: 'default',
+  content: pngBytes,  // Uint8Array from svgToBytes()
+}
+```
+
+The supported _fields_ are:
+
+- _id_: Placement id from the [product catalogue](#products) (e.g. `"default"`).
+- _content_: `Uint8Array` PNG bytes, or a string URL in some internal flows.
+
+Look up valid ids and _print_ratio_ per product from `GET /v1/products/`. For alignment, use [`openWithItem`](#openwithitem) with a [`Position`](#position), or set `user_position` on the placement object when calling `model.set()` directly.
+
+---
+
+## Position
+
+`Position` (interface)
+
+Alignment of chart content on a print area. Import from `chartout/store`.
+
+```ts
+import type { Position } from 'chartout/store'
+
+const position: Position = {
+  horizontal: 'left',   // 'left' | 'center' | 'right'
+  vertical: 'middle',   // 'top' | 'middle' | 'bottom'
+  scale: 1.1,
+  dx: 0.05,
+  dy: -0.02,
+}
+
+await openWithItem(model, 'canvas_10x10', svg, 'My Canvas', { position })
+```
+
+The supported _fields_ are:
+
+- _horizontal_: Optional. Default `'center'`.
+- _vertical_: Optional. Default `'middle'`.
+- _scale_: Optional zoom factor (number).
+- _dx_, _dy_: Optional normalized offsets (number).
+
+Passed via _options.position_ on [`openWithItem`](#openwithitem). Omitted fields use the defaults above.
+
+---
+
+## CartItem
+
+`CartItem` (interface)
+
+A cart line: one product variant with print content and quantity. Import from `chartout`. There is no `Cart` class in JavaScript; pass a `CartItem[]` to [`openWithCart`](#openwithcart).
+
+```ts
+import type { CartItem } from 'chartout'
+import { svgToBytes, openWithCart } from 'chartout/store'
+
+const bytes = await svgToBytes(svg)
+const items: CartItem[] = [
+  {
+    id: 'canvas_10x10',
+    name: 'My Canvas (10″×10″)',
+    quantity: 1,
+    placements: [{ id: 'default', content: bytes }],
+  },
+]
+
+openWithCart(model, items)
+```
+
+The supported _fields_ are:
+
+- _id_: Product id from the [product catalogue](#products).
+- _name_: Display name in the widget.
+- _quantity_: Line quantity (positive integer).
+- _placements_: Array of [`Placement`](#placement) objects.
+- _price_, _variant_id_, _product_id_: Optional; populated by the widget after catalogue load.
+
+Build items manually for [`openWithCart`](#openwithcart), or use [`openWithItem`](#openwithitem) / [`openWithViz`](#openwithviz) to load a single chart without constructing a `CartItem` yourself.
+
+---
+
+## createChartoutModel
+
+`createChartoutModel(initialState?)`
+
+Create the anywidget-compatible state bridge between your app and the widget. Import from `chartout`.
 
 ```ts
 import { createChartoutModel } from 'chartout'
 
-const model = createChartoutModel({})
+const model = createChartoutModel({
+  view: 'cart',
+  shipping_location: { country: 'NL', state: '' },
+})
 ```
 
-Creates the state bridge between your code and the widget. Pass the returned `model` to both `ChartoutWidget` and the store functions.
+The supported _parameters_ are:
 
-## `chartout/store`
+- _initialState_: Optional partial [`ChartoutState`](#chartoutstate). Omitted keys use defaults: empty cart, no active item, `view: 'cart'`, empty shipping location.
 
-### `openWithViz(model, svgElement, title)`
+Returns a [`ChartoutModel`](#chartoutmodel) instance. Pass it to [`ChartoutWidget`](#chartoutwidget), [`mount`](#mount), and the `openWith*` helpers.
 
-Opens the store with a chart and lets the user pick a product.
+### ChartoutModel
+
+State bridge implementing the anywidget model protocol:
+
+- _get(key)_: Read a state key.
+- _set(key, value)_: Write a state key and notify listeners.
+- _save_changes()_: No-op in standalone embedding (present for protocol compatibility).
+- _send(content)_: Handles `{ type: 'open_url', url }` messages by opening the URL in a new tab.
+- _on(event, callback)_ / _off(event, callback)_: Subscribe to `change:*` events.
+
+Prefer the `openWith*` helpers over calling `model.set()` directly unless you need low-level control.
+
+### ChartoutState
+
+Synced state keys:
+
+- _cart_: [`CartItem`](#cartitem)[]. Cart lines shown in the widget.
+- _active_item_: [`ActiveItem`](#activeitem) | `null`. Product currently shown in the 3D viewer.
+- _active_texture_: [`ActiveTexture`](#activetexture) | `null`. Composite texture written back by the widget when the user adjusts placement.
+- _view_: [`StoreView`](#storeview). Current UI view.
+- _shipping_location_: [`ShippingLocation`](#shippinglocation). Pre-fills checkout country/state.
+
+### ActiveItem
+
+`{ id: string; name: string; placements: Placement[] }`. Viewer state, same placement shape as cart lines.
+
+### ActiveTexture
+
+`{ texture: Uint8Array }`. PNG bytes for the rendered composite texture.
+
+---
+
+## openWithViz
+
+`openWithViz(model, svgEl, title, options?)`
+
+Load a chart and let the user pick the product inside the widget.
 
 ```ts
-await openWithViz(model, svgElement, 'My chart')
+import { openWithViz } from 'chartout/store'
+
+await openWithViz(model, svg, 'Old Faithful Eruptions')
+await openWithViz(model, svg, 'My chart', {
+  view: 'checkout',
+  shippingLocation: { country: 'NL' },
+})
 ```
 
-### `openWithItem(model, productId, svgElement, title)`
+The supported _parameters_ are:
 
-Opens the store with a specific product pre-selected.
+- _model_: [`ChartoutModel`](#chartoutmodel) from [`createChartoutModel`](#createchartoutmodel).
+- _svgEl_: Chart SVG element to rasterise.
+- _title_: Display name for the chart.
+- _options_: Optional [`OpenOptions`](#openoptions).
+
+Clears the cart and sets _active_item_ to `mug_black_11oz` with the rasterised chart so the widget shows a product immediately; the user can switch products inside the store.
+
+---
+
+## openWithItem
+
+`openWithItem(model, productId, svgEl, title, options?)`
+
+Load a chart with a specific product pre-selected.
 
 ```ts
-await openWithItem(model, 'canvas_10x10', svgElement, 'My Canvas')
+import { openWithItem } from 'chartout/store'
+
+await openWithItem(model, 'canvas_10x10', svg, 'My Canvas (10″×10″)')
+await openWithItem(model, 'mug_black_11oz', svg, 'My Mug', {
+  position: { horizontal: 'center', vertical: 'middle', scale: 1.0 },
+  shippingLocation: { country: 'US', state: 'CA' },
+})
 ```
 
-### `openWithCart(model, items)`
+The supported _parameters_ are:
 
-Opens the store directly on the cart review screen.
+- _model_: [`ChartoutModel`](#chartoutmodel).
+- _productId_: Product id from the [product catalogue](#products). Validate before calling.
+- _svgEl_: Chart SVG element to rasterise.
+- _title_: Display name for the line.
+- _options_: Optional [`OpenItemOptions`](#openitemoptions). Extends [`OpenOptions`](#openoptions) with _position_ ([`Position`](#position)).
+
+Sets both _cart_ and _active_item_ to a single line with quantity `1`.
+
+---
+
+## openWithCart
+
+`openWithCart(model, items, options?)`
+
+Load a pre-built cart and open on the cart review screen.
 
 ```ts
+import { openWithCart } from 'chartout/store'
+
 openWithCart(model, items satisfies CartItem[])
+openWithCart(model, items, { view: 'cart', shippingLocation: { country: 'NL' } })
 ```
 
-### `svgToBytes(svgElement, resolution?)`
+The supported _parameters_ are:
 
-Rasterises an SVG element to PNG bytes suitable for upload.
+- _model_: [`ChartoutModel`](#chartoutmodel).
+- _items_: [`CartItem`](#cartitem)[] with PNG bytes in each placement's _content_.
+- _options_: Optional [`OpenOptions`](#openoptions).
 
-```ts
-const bytes = await svgToBytes(svgElement)        // 3000 px on long edge
-const bytes = await svgToBytes(svgElement, 4000)  // custom resolution
-```
+Clears _active_item_ and sets _cart_ to the provided items.
 
-## `chartout/react`
+### OpenOptions
 
-### `ChartoutWidget`
+Shared options for all `openWith*` functions:
+
+- _view_: Optional [`StoreView`](#storeview). Default `'cart'`.
+- _shippingLocation_: Optional `{ country: string; state?: string }`. Mapped to _shipping_location_ on the model.
+
+### OpenItemOptions
+
+Extends `OpenOptions` with:
+
+- _position_: Optional [`Position`](#position) for initial placement alignment.
+
+---
+
+## ChartoutWidget
+
+`ChartoutWidget({ model, style })`
+
+React component that mounts the store widget. Import from `chartout/react`. Use in React apps so the widget shares your app's React instance.
 
 ```tsx
 import { ChartoutWidget } from 'chartout/react'
@@ -58,34 +336,129 @@ import { ChartoutWidget } from 'chartout/react'
 <ChartoutWidget model={model} style={{ width: '100%' }} />
 ```
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `model` | `ChartoutModel` | State bridge from `createChartoutModel` |
-| `style` | `CSSProperties` | Inline styles applied to the widget container |
-| `className` | `string` | CSS class applied to the widget container |
+The supported _props_ are:
 
-## `chartout/mount`
+- _model_: [`ChartoutModel`](#chartoutmodel) from [`createChartoutModel`](#createchartoutmodel).
+- _theme_: Optional [`Theme`](#theme) look-and-feel overrides.
+- _style_: Optional `React.CSSProperties` applied to the widget container.
 
-### `mount(element, options)`
+The store UI currently has a fixed height of about 357px (see [Integrations: Widget size](/docs/javascript/integrations#widget-size)). The layout is fully responsive in width. Requires React 19+ as a peer dependency.
 
-Mounts the widget into a DOM element without React.
+---
+
+## mount
+
+`mount(el, options)`
+
+Mount the widget into a DOM element. Import from `chartout/mount`. Self-contained; no extra UI dependencies required.
 
 ```ts
 import { mount } from 'chartout/mount'
 
-mount(document.getElementById('store'), { model })
+const { destroy } = mount(document.getElementById('store')!, { model })
+
+// later
+destroy()
 ```
 
-## `CartItem` type
+The supported _parameters_ are:
+
+- _el_: Container `HTMLElement`. The widget fills its dimensions.
+- _options.model_: [`ChartoutModel`](#chartoutmodel).
+- _options.theme_: Optional [`Theme`](#theme) look-and-feel overrides.
+
+Returns `{ destroy }`. Call to unmount and release resources. In React apps, prefer [`ChartoutWidget`](#chartoutwidget) so the store shares your app's React instance.
+
+---
+
+## StoreView
+
+`StoreView` (type)
+
+Which view the store UI shows. String literal union: `'cart' | 'checkout'`.
+
+- `'cart'`: product picker and cart (default).
+- `'checkout'`: checkout flow.
+
+Pass to [`createChartoutModel`](#createchartoutmodel) _initialState.view_ or `openWith*` _options.view_.
+
+---
+
+## ShippingLocation
+
+`ShippingLocation` (interface)
+
+Pre-fills the checkout country/state selector.
 
 ```ts
-interface CartItem {
-  id: string             // product ID from GET /v1/products
-  name: string           // display name shown in the widget
-  quantity: number
-  placements: {
-    id: string           // placement ID from GET /v1/products
-    content: Uint8Array  // PNG bytes from svgToBytes()
-  }[]
-}
+{ country: 'NL', state: '' }
+{ country: 'US', state: 'CA' }
 ```
+
+The supported _fields_ are:
+
+- _country_: ISO country code (string).
+- _state_: State or province code (string). Use `''` when not applicable.
+
+Set via [`createChartoutModel`](#createchartoutmodel) _initialState.shipping_location_ or `openWith*` _options.shippingLocation_ (`state` optional in options, defaults to `''`).
+
+---
+
+## Theme
+
+`Theme` (interface)
+
+Optional widget styling. Each field maps to a `--chartout-*` CSS variable; omitted keys use built-in defaults. All values are CSS strings.
+
+Pass _theme_ to [`ChartoutWidget`](#chartoutwidget) or [`mount`](#mount):
+
+```tsx
+import type { Theme } from 'chartout'
+import { ChartoutWidget } from 'chartout/react'
+
+const theme: Theme = {
+  accent: '#db2777',
+  accent_hover: '#be185d',
+  radius: '12px',
+  font: "'Inter', system-ui, sans-serif",
+}
+
+<ChartoutWidget model={model} theme={theme} style={{ width: '100%' }} />
+```
+
+```ts
+import { mount } from 'chartout/mount'
+
+mount(document.getElementById('store')!, {
+  model,
+  theme: { accent: '#db2777', radius: '12px' },
+})
+```
+
+You can also set `--chartout-*` variables on `:root` or any ancestor, or use `themeToStyle()` from `chartout` to build inline styles yourself.
+
+The supported _fields_ are:
+
+| Field | Maps to | Default |
+|-------|---------|---------|
+| _font_ | `--chartout-font` | `system-ui, sans-serif` |
+| _accent_ | `--chartout-accent` | `#4f46e5` |
+| _accent_hover_ | `--chartout-accent-hover` | `#4338ca` |
+| _accent_fg_ | `--chartout-accent-fg` | `#ffffff` |
+| _border_color_ | `--chartout-border-color` | `#e0e0e0` |
+| _border_width_ | `--chartout-border-width` | `1px` |
+| _radius_ | `--chartout-radius` | `8px` |
+| _shadow_ | `--chartout-shadow` | `none` |
+| _surface_ | `--chartout-surface` | `#f8f9fa` |
+| _viewer_bg_ | `--chartout-viewer-bg` | `#f5f5f5` |
+| _fg_ | `--chartout-fg` | `#374151` |
+| _fg_muted_ | `--chartout-fg-muted` | `#6b7280` |
+| _font_size_ | `--chartout-font-size` | `14px` |
+| _font_size_heading_ | `--chartout-font-size-heading` | `16px` |
+| _font_size_status_ | `--chartout-font-size-status` | `12px` |
+| _font_size_button_ | `--chartout-font-size-button` | `14px` |
+| _font_weight_ | `--chartout-font-weight` | `400` |
+| _font_weight_heading_ | `--chartout-font-weight-heading` | `600` |
+| _line_height_ | `--chartout-line-height` | `1.4` |
+
+Unknown keys raise an error at runtime (via `validateTheme`). The widget scopes styles under `[data-chartout-widget]` so host-page CSS does not leak in.

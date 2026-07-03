@@ -1,0 +1,93 @@
+---
+title: Environments
+description: Run chartout in JupyterLab, VS Code, Positron, Marimo, and Google Colab.
+---
+
+import { Tab, Tabs } from '@/components/docs/Tabs'
+
+Chartout is a Jupyter widget built on [anywidget](https://anywidget.dev). It runs anywhere the Jupyter widget protocol is supported. Requires Python 3.11 or higher.
+
+Display the store by evaluating a cell that returns `chartout.Store(...)` as the last expression, or wrap it in `IPython.display.display()`.
+
+The widget height is fixed at about 357px today, sized for VS Code notebook cell output. Flexible height may come in a future release; [open an issue](https://github.com/hoekinsights/chartout/issues) if you need it.
+
+Screenshots for each environment can be added under `public/environments/` (e.g. `jupyterlab.png`) and embedded per tab when ready.
+
+<Tabs items={['JupyterLab', 'VS Code', 'Positron', 'Marimo', 'Colab']}>
+  <Tab value="JupyterLab">
+    JupyterLab is the primary development target. Install chartout in the kernel environment, then create a notebook:
+
+    ```bash
+    pip install chartout
+    ```
+
+    ```python
+    import altair as alt
+    import chartout
+
+    chart = alt.Chart(...).mark_point()
+    chartout.Store(chart)
+    ```
+
+    The widget loads the store UI inline in the output area. State syncs between Python and the browser through traitlets.
+  </Tab>
+  <Tab value="VS Code">
+    Use the [Jupyter extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter) for VS Code or Cursor. Select a Python 3.11+ interpreter with chartout installed, open or create a `.ipynb` notebook, and run the same code as in JupyterLab:
+
+    ```python
+    import chartout
+    chartout.Store(my_chart)
+    ```
+
+    Widget output renders in the notebook cell output panel. If the widget does not appear, confirm the kernel matches the environment where you installed chartout (`pip show chartout` in a notebook cell).
+  </Tab>
+  <Tab value="Positron">
+    [Positron](https://posit.co/products/open-source/positron/) supports Jupyter notebooks with the same widget stack. Install chartout in the Positron Python environment:
+
+    ```bash
+    pip install chartout
+    ```
+
+    ```python
+    import chartout
+    chartout.Store(chartout.item("canvas_10x10", chart, name="My canvas"))
+    ```
+  </Tab>
+  <Tab value="Marimo">
+    [Marimo](https://marimo.io) notebooks can host anywidget components. Install chartout in the marimo environment and import as usual:
+
+    ```bash
+    pip install chartout marimo
+    ```
+
+    ```python
+    import marimo as mo
+    import chartout
+
+    store = chartout.Store(my_chart)
+    mo.ui.anywidget(store)
+    ```
+
+    Wrap the widget with `mo.ui.anywidget` so marimo renders the anywidget model. Exact import patterns may vary with marimo version; check marimo docs if the widget output is empty.
+  </Tab>
+  <Tab value="Colab">
+    Google Colab requires an explicit install each session (unless you use a custom runtime image):
+
+    ```python
+    !pip install chartout
+    ```
+
+    ```python
+    import chartout
+    chartout.Store(my_chart)
+    ```
+
+    Colab supports Jupyter widgets in most cases. Checkout opens in a new browser tab via the widget's URL handler. Network access to the ChartOut API must be available from the Colab runtime.
+  </Tab>
+</Tabs>
+
+## Related
+
+- [Installation](/docs/python): uv, pip, dependencies
+- [Example usage](/docs/python/example-usage): `Store`, `item`, `Cart`
+- [API reference](/docs/python/api-reference)
