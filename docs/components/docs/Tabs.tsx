@@ -1,11 +1,25 @@
 'use client'
 
 import * as React from 'react'
-import { createContext, useContext, useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react'
 import { cn } from 'fumadocs-ui/utils/cn'
 import * as Unstyled from 'fumadocs-ui/components/tabs.unstyled'
 
-const TabsContext = createContext<{ items?: string[]; collection: string[] } | null>(null)
+const TabsContext = createContext<{
+  items?: string[]
+  collection: string[]
+  registerTabId: (value: string, id: string) => void
+} | null>(null)
 
 function useTabContext() {
   const ctx = useContext(TabsContext)
@@ -21,6 +35,8 @@ export interface TabsProps extends Omit<ComponentProps<typeof Unstyled.Tabs>, 'v
 
 export interface TabProps extends Omit<ComponentProps<typeof Unstyled.TabsContent>, 'value'> {
   value?: string
+  /** DOM id for deep links and sidebar TOC (use with `updateAnchor` on Tabs). */
+  id?: string
 }
 
 const TabsList = React.forwardRef<
@@ -75,6 +91,19 @@ function TabsContent({ value, className, ...props }: ComponentProps<typeof Unsty
   )
 }
 
+/** Compact scroll target so sidebar TOC intersection (threshold 1) can match tab sections. */
+function TabAnchor({ id, label }: { id: string; label: string }) {
+  return (
+    <h2
+      id={id}
+      tabIndex={-1}
+      className="scroll-m-28 not-prose pointer-events-none m-0 h-px overflow-hidden border-0 p-0 opacity-0"
+    >
+      {label}
+    </h2>
+  )
+}
+
 export function Tabs({
   ref,
   className,
@@ -82,10 +111,37 @@ export function Tabs({
   label,
   defaultIndex = 0,
   defaultValue = items ? escapeValue(items[defaultIndex]) : undefined,
+  updateAnchor = false,
   ...props
 }: TabsProps & { ref?: React.Ref<React.ComponentRef<typeof Unstyled.Tabs>> }) {
   const [value, setValue] = useState(defaultValue)
   const collection = useMemo(() => [], [])
+  const valueToIdMap = useRef(new Map<string, string>())
+
+  const registerTabId = React.useCallback((tabValue: string, id: string) => {
+    valueToIdMap.current.set(tabValue, id)
+  }, [])
+
+  const selectFromHash = React.useCallback(() => {
+    const hash = window.location.hash.slice(1)
+    if (!hash) return
+    for (const [tabValue, id] of valueToIdMap.current.entries()) {
+      if (id === hash) {
+        setValue(tabValue)
+        requestAnimationFrame(() => {
+          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+        return
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!updateAnchor) return
+    selectFromHash()
+    window.addEventListener('hashchange', selectFromHash)
+    return () => window.removeEventListener('hashchange', selectFromHash)
+  }, [updateAnchor, selectFromHash])
 
   return (
     <Unstyled.Tabs
@@ -95,6 +151,10 @@ export function Tabs({
       onValueChange={(v) => {
         if (items && !items.some((item) => escapeValue(item) === v)) return
         setValue(v)
+        if (updateAnchor) {
+          const id = valueToIdMap.current.get(v)
+          if (id) window.history.replaceState(null, '', `#${id}`)
+        }
       }}
       {...props}
     >
@@ -108,15 +168,17 @@ export function Tabs({
           ))}
         </TabsList>
       )}
-      <TabsContext.Provider value={useMemo(() => ({ items, collection }), [collection, items])}>
+      <TabsContext.Provider
+        value={useMemo(() => ({ items, collection, registerTabId }), [collection, items, registerTabId])}
+      >
         {props.children}
       </TabsContext.Provider>
     </Unstyled.Tabs>
   )
 }
 
-export function Tab({ value, ...props }: TabProps) {
-  const { items } = useTabContext()
+export function Tab({ value, id, children, ...props }: TabProps) {
+  const { items, registerTabId } = useTabContext()
   const resolved =
     value ??
     items?.at(useCollectionIndex())
@@ -125,7 +187,18 @@ export function Tab({ value, ...props }: TabProps) {
     throw new Error('Failed to resolve tab `value`, please pass a `value` prop to the Tab component.')
   }
 
-  return <TabsContent value={escapeValue(resolved)} {...props} />
+  const tabValue = escapeValue(resolved)
+
+  useEffect(() => {
+    if (id) registerTabId(tabValue, id)
+  }, [id, registerTabId, tabValue])
+
+  return (
+    <TabsContent value={tabValue} {...props}>
+      {id ? <TabAnchor id={id} label={resolved} /> : null}
+      {children}
+    </TabsContent>
+  )
 }
 
 function useCollectionIndex() {

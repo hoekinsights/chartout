@@ -1,4 +1,4 @@
 {
   "title": "JavaScript",
-  "pages": ["index", "dependencies", "integrations", "example-usage", "api-reference"]
+  "pages": ["index", "integrations", "example-usage", "api-reference"]
 }

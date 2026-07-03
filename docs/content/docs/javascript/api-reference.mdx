@@ -60,6 +60,19 @@ const catalogue = await products()
 // catalogue[0].placements[0].print_ratio === '1:1'
 ```
 
+Each product has a stable `id`, a display `name`, and one or more `placements` (print areas). Today the catalogue includes:
+
+| `id` | Name | `print_ratio` |
+|------|------|---------------|
+| `canvas_10x10` | Canvas (10″×10″) | `1:1` |
+| `canvas_16x32_horizontal` | Canvas (16″×32″) Horizontal | `50:27` |
+| `canvas_16x32_vertical` | Canvas (16″×32″) Vertical | `27:50` |
+| `mousepad_white_8x7` | Mouse Pad (White / 8.7″×7.1″) | `6:5` |
+| `mug_black_11oz` | Ceramic Mug with Color Inside (Black / 11 oz) | `18:7` |
+| `mug_green_11oz` | Ceramic Mug with Color Inside (Green / 11 oz) | `18:7` |
+
+The live API is the source of truth; call `products()` to refresh this list if a product id is rejected.
+
 The supported _parameters_ are:
 
 - _options.store_: Optional API URL override. Defaults to `DEFAULT_PRODUCTS_URL` (`https://api.chartout.io/v1/products/`).
@@ -342,7 +355,7 @@ The supported _props_ are:
 - _theme_: Optional [`Theme`](#theme) look-and-feel overrides.
 - _style_: Optional `React.CSSProperties` applied to the widget container.
 
-The store UI currently has a fixed height of about 357px (see [Integrations: Widget size](/docs/javascript/integrations#widget-size)). The layout is fully responsive in width. Requires React 19+ as a peer dependency.
+The store UI has a fixed height of about 357px; the layout is fully responsive in width (see [Integrations: Layout](/docs/javascript/integrations#layout)).
 
 ---
 

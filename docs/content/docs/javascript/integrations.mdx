@@ -14,16 +14,33 @@ Pick an embedding path based on your app stack. All paths share the same model a
 | Vue | `chartout/mount` | nothing extra |
 | Svelte | `chartout/mount` | nothing extra |
 
-Use `chartout/react` in React apps. In other stacks, call `mount()` on a container element with the same model and store helpers. See [Dependencies](/docs/javascript/dependencies) for package exports and bundler notes.
+## Package exports
 
-## Widget size
+| Export | Purpose |
+|--------|---------|
+| `chartout` | `createChartoutModel`, state types, `Theme`, `themeToStyle` |
+| `chartout/store` | `openWithViz`, `openWithItem`, `openWithCart`, `svgToBytes`, `products` |
+| `chartout/react` | `ChartoutWidget` for React apps |
+| `chartout/mount` | `mount()` for vanilla JS, Vue, Svelte, and other non-React hosts |
 
-The store UI currently has a fixed height of about 357px. That size matches VS Code notebook cell output, where chartout was first embedded. The layout is fully responsive in width; set the container width (e.g. `width: '100%'`).
+`chartout/react` is for React 19+ apps: install `react` and `react-dom` as peers, and the widget shares your React instance. `chartout/mount` is self-contained for other hosts; the bundle is larger because it ships everything needed to render the store.
 
-Flexible height may be supported in a future release. If that matters for your app, [open an issue](https://github.com/hoekinsights/chartout/issues).
+Peer dependencies on `react` and `react-dom` (>=19) are **optional**. Install them only with `chartout/react`:
 
-<Tabs items={['React', 'Vanilla JS', 'Vue', 'Svelte']}>
-  <Tab value="React">
+```bash
+npm install chartout react react-dom
+```
+
+## React [toc] [#react]
+
+## Vanilla JS [toc] [#vanilla-js]
+
+## Vue [toc] [#vue]
+
+## Svelte [toc] [#svelte]
+
+<Tabs items={['React', 'Vanilla JS', 'Vue', 'Svelte']} updateAnchor>
+  <Tab value="React" id="react">
     Use when your app already runs React 19 or newer. The widget shares your React instance (no duplicate copy).
 
     ```bash
@@ -56,10 +73,10 @@ Flexible height may be supported in a future release. If that matters for your a
     **Gotchas**
 
     - Install `react` and `react-dom` as peers; `chartout/react` does not bundle them.
-    - Set width on the container (e.g. `width: '100%'`). See [Widget size](#widget-size) above.
+    - Set width on the container (e.g. `width: '100%'`). Height is fixed; see [Layout](#layout).
     - Call `openWithViz`, `openWithItem`, or `openWithCart` after the widget is mounted (or anytime; state syncs through the model).
   </Tab>
-  <Tab value="Vanilla JS">
+  <Tab value="Vanilla JS" id="vanilla-js">
     Use for plain HTML, Electron renderers, or any page that can load an ES module.
 
     ```html
@@ -88,9 +105,9 @@ Flexible height may be supported in a future release. If that matters for your a
     **Gotchas**
 
     - Call `destroy()` when removing the container from the page.
-    - Give the container a width before mounting. See [Widget size](#widget-size) above.
+    - Give the container a width before mounting. Height is fixed; see [Layout](#layout).
   </Tab>
-  <Tab value="Vue">
+  <Tab value="Vue" id="vue">
     Use `chartout/mount` with a container ref. Mount when the component appears; call `destroy()` when it is removed.
 
     ```vue
@@ -123,7 +140,7 @@ Flexible height may be supported in a future release. If that matters for your a
     - Keep one model instance per widget; create it in `onMounted` or hoisted to module scope if the component never unmounts.
     - Always call `destroy()` on unmount to release the widget.
   </Tab>
-  <Tab value="Svelte">
+  <Tab value="Svelte" id="svelte">
     Use `chartout/mount` with a bound container element. Mount in `onMount`; call `destroy()` in `onDestroy`.
 
     ```svelte
@@ -154,8 +171,68 @@ Flexible height may be supported in a future release. If that matters for your a
   </Tab>
 </Tabs>
 
+## Widget bundle
+
+The store is a **browser-only** UI. It needs a DOM and does not run on a server.
+
+`chartout/mount` and `chartout/react` ship a prebuilt widget bundle. You do not install its internals separately. The bundle already includes:
+
+- **Three.js** for the 3D product preview
+- **skia-canvas** for compositing chart PNGs onto the product mockup and updating the 3D texture
+- **anywidget** utilities and other UI code
+
+You do not add these to your `package.json`. If you use a meta-framework with server-side rendering, a server build may fail on `skia-canvas` even though the widget only runs in the browser. Import chartout in client code only; see [SSR and meta-frameworks](#ssr-and-meta-frameworks) if the build still errors.
+
+### Layout
+
+The store UI has a fixed height of about 357px, sized for VS Code notebook cell output where chartout was first embedded. The layout is fully responsive in width; set the container width (e.g. `width: '100%'` on the mount container or `style` prop on `ChartoutWidget`).
+
+Flexible height may be supported in a future release. [Open an issue](https://github.com/hoekinsights/chartout/issues) if that matters for your app.
+
+### svgToBytes
+
+`svgToBytes` in `chartout/store` rasterises an SVG chart to PNG bytes using the browser's `OffscreenCanvas` API. That produces the print content for cart placements.
+
+Call it yourself when building `CartItem[]` for `openWithCart`. For `openWithViz` and `openWithItem`, pass an SVG and those helpers call `svgToBytes` internally.
+
+It lives in the slim `chartout/store` bundle, separate from the widget UI that handles the 3D preview and placement interactions.
+
+### SSR and meta-frameworks
+
+If a server build pulls in `chartout/mount` or `chartout/react`, it may resolve `skia-canvas` incorrectly and fail with errors about `.node` files.
+
+Import chartout only in client code (`'use client'` in Next.js, `onMount` in Svelte, client-only components in Nuxt). If the server build still mentions `skia-canvas`, exclude it from the server bundle:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  ssr: {
+    external: ['skia-canvas'],
+  },
+})
+```
+
+```ts
+// next.config.ts
+webpack: (config, { isServer }) => {
+  if (isServer) {
+    config.externals = [...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)), 'skia-canvas']
+  }
+  return config
+},
+```
+
+## Browser APIs
+
+| API | Used by |
+|-----|---------|
+| `OffscreenCanvas` | `svgToBytes` |
+| `fetch` | `products()`, widget catalogue load |
+| WebGL | 3D product preview |
+
+Target modern evergreen browsers. Ensure chart SVGs have readable `width`/`height` or a `viewBox` before calling `svgToBytes`.
+
 ## Related
 
-- [Dependencies](/docs/javascript/dependencies): exports, skia-canvas, SSR
 - [Example usage](/docs/javascript/example-usage): chart input patterns
 - [API reference](/docs/javascript/api-reference): `ChartoutWidget`, `mount`, `createChartoutModel`
