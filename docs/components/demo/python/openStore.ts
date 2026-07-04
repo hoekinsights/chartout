@@ -4,39 +4,32 @@ import { getSessionModel } from './session'
 
 export type StorePattern = 'vizlike' | 'cartItem' | 'cart'
 
-const CHART_TITLE = 'Old Faithful Eruptions'
+const CHART_TITLE = 'Palmer Penguins'
 
-export async function openStorePattern(sessionId: string, pattern: StorePattern, svg: SVGSVGElement) {
+export async function openStorePattern(sessionId: string, pattern: StorePattern, svgs: SVGSVGElement[]) {
   const model = getSessionModel(sessionId)
 
   switch (pattern) {
     case 'vizlike':
-      await openWithViz(model, svg, CHART_TITLE)
+      await openWithViz(model, svgs[0], CHART_TITLE)
       break
     case 'cartItem':
-      await openWithItem(model, 'mug_green_11oz', svg, 'Green Mug with my Viz')
+      // Square scatter → square canvas (1:1), scaled to 0.8 to match the docs `scale=0.8`.
+      await openWithItem(model, 'canvas_10x10', svgs[0], 'My Canvas (10″×10″)', {
+        position: { scale: 0.8 },
+      })
       break
     case 'cart': {
-      const bytes = await svgToBytes(svg)
+      // scatter → canvas (1:1), histogram → mug (18:7), raster → mousepad (6:5).
+      const [canvasBytes, mugBytes, mousepadBytes] = await Promise.all([
+        svgToBytes(svgs[0]),
+        svgToBytes(svgs[1]),
+        svgToBytes(svgs[2]),
+      ])
       openWithCart(model, [
-        {
-          id: 'mug_black_11oz',
-          name: 'My Mug (11 oz)',
-          quantity: 2,
-          placements: [{ id: 'default', content: bytes }],
-        },
-        {
-          id: 'canvas_16x32_horizontal',
-          name: 'My Canvas (16″×32″)',
-          quantity: 3,
-          placements: [{ id: 'default', content: bytes }],
-        },
-        {
-          id: 'mousepad_white_8x7',
-          name: 'My Mousepad (8″×7″)',
-          quantity: 3,
-          placements: [{ id: 'default', content: bytes }],
-        },
+        { id: 'canvas_10x10', name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes }] },
+        { id: 'mug_black_11oz', name: 'My Mug (11 oz)', quantity: 2, placements: [{ id: 'default', content: mugBytes }] },
+        { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
       ] satisfies CartItem[])
       break
     }

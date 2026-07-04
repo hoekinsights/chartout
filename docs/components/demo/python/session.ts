@@ -4,7 +4,7 @@ type ChartoutModel = ReturnType<typeof createChartoutModel>
 
 type Session = {
   model: ChartoutModel
-  svg: SVGSVGElement | null
+  svgs: SVGSVGElement[]
   listeners: Set<() => void>
 }
 
@@ -15,7 +15,7 @@ function getSession(sessionId: string): Session {
   if (!session) {
     session = {
       model: createChartoutModel({}),
-      svg: null,
+      svgs: [],
       listeners: new Set(),
     }
     sessions.set(sessionId, session)
@@ -23,9 +23,9 @@ function getSession(sessionId: string): Session {
   return session
 }
 
-export function setSessionSvg(sessionId: string, svg: SVGSVGElement) {
+export function setSessionSvgs(sessionId: string, svgs: SVGSVGElement[]) {
   const session = getSession(sessionId)
-  session.svg = svg
+  session.svgs = svgs
   session.listeners.forEach((listener) => listener())
 }
 
@@ -33,7 +33,7 @@ export function getSessionModel(sessionId: string): ChartoutModel {
   return getSession(sessionId).model
 }
 
-export function subscribeSessionSvg(sessionId: string, listener: () => void) {
+export function subscribeSessionSvgs(sessionId: string, listener: () => void) {
   const session = getSession(sessionId)
   session.listeners.add(listener)
   return () => {
@@ -41,6 +41,6 @@ export function subscribeSessionSvg(sessionId: string, listener: () => void) {
   }
 }
 
-export function getSessionSvg(sessionId: string): SVGSVGElement | null {
-  return getSession(sessionId).svg
+export function getSessionSvgs(sessionId: string): SVGSVGElement[] {
+  return getSession(sessionId).svgs
 }

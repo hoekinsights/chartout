@@ -1,32 +1,67 @@
 ---
 title: Example usage
-description: Integration patterns for VizLike, CartItem, and Cart with Altair, vgplot, and matplotlib.
 ---
 
 import { Tab, Tabs } from '@/components/docs/Tabs'
 import { PythonChartOutput, PythonStoreOutput } from '@/components/demo/python'
 
-There are three ways to open the store, depending on how much you want to decide for the user. Each example follows a notebook-style flow: create a chart, display it, open the store, then display the widget.
+There are three ways to open the store, depending on how much you want to decide for the user. Each example follows a notebook-style flow: create a chart, display it, open the store, then display the widget. The charts use the [Palmer Penguins](https://allisonhorst.github.io/palmerpenguins/) dataset.
 
 ## VizLike
 
-The user picks the product inside the widget. Use this for general "print this chart" buttons.
+If the you or the user has a chart and likes to picks the product inside the widget.
 
 <Tabs items={['Vega-Altair', 'matplotlib']}>
   <Tab value="Vega-Altair">
     ```python
+    import numpy as np
+    import pandas as pd
     import altair as alt
+    from altair.datasets import data
 
-    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
+    col_class = "Species"
+    cols = [
+        "Beak Length (mm)",
+        "Beak Depth (mm)",
+        "Flipper Length (mm)",
+        "Body Mass (g)",
+    ]
+    samples = 100
 
-    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
-        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
-        alt.Y("count()", title="Count"),
+    source = data.penguins().dropna(subset=[*cols, col_class])
+    # Take an even sample of each species so the chart stays light.
+    frame = source.groupby(col_class, observed=True).head(15).reset_index(drop=True)
+
+    t = np.linspace(-np.pi, np.pi, samples)
+    # Normalize each dimension to (0, 1) so no single column dominates the curve.
+    values = frame[cols].to_numpy(dtype=float)
+    values = (values - values.min(axis=0)) / (values.max(axis=0) - values.min(axis=0))
+    values = values.T
+
+    curves = np.outer(values[0], np.ones_like(t)) / np.sqrt(2)
+    for i in range(1, len(values)):
+        fn = np.sin if i % 2 else np.cos
+        curves += np.outer(values[i], fn(((i + 1) // 2) * t))
+
+    rows = len(frame)
+    plot_data = pd.DataFrame({
+        "t": np.tile(t, rows),
+        "value": curves.ravel(),
+        "sample": np.repeat(np.arange(rows), samples),
+        col_class: np.repeat(frame[col_class].to_numpy(), samples),
+    })
+
+    chart = alt.Chart(plot_data).mark_line().encode(
+        x="t:Q",
+        y=alt.Y("value:Q").title(None),
+        color=f"{col_class}:N",
+        detail="sample:N",
+        opacity=alt.value(0.5),
     )
     chart
     ```
 
-    <PythonChartOutput library="altair" sessionId="altair-vizlike" />
+    <PythonChartOutput library="altair" sessionId="altair-vizlike" pattern="vizlike" />
 
     ```python
     import chartout
@@ -37,46 +72,22 @@ The user picks the product inside the widget. Use this for general "print this c
 
     <PythonStoreOutput sessionId="altair-vizlike" pattern="vizlike" />
   </Tab>
-  <Tab value="Mosaic vgplot">
-    ```python
-    import vgplot as vg
-
-    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-
-    view = vg.plot(
-        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
-        vg.width(400),
-        vg.height(300),
-    )
-    view
-    ```
-
-    <PythonChartOutput library="vgplot" sessionId="vgplot-vizlike" />
-
-    vgplot support is planned — the store call below shows the intended API once available.
-
-    ```python
-    import chartout
-
-    store = chartout.Store(vg.spec())
-    store
-    ```
-
-    <PythonStoreOutput sessionId="vgplot-vizlike" pattern="vizlike" />
-  </Tab>
   <Tab value="matplotlib">
     ```python
     import matplotlib.pyplot as plt
-    import pandas as pd
+    from pandas.plotting import andrews_curves
+    from altair.datasets import data
 
-    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-    fig, ax = plt.subplots(figsize=(6, 3))
-    ax.hist(df["eruptions"], bins=20, color="steelblue")
-    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
+    cols = ["Beak Length (mm)", "Beak Depth (mm)", "Flipper Length (mm)", "Body Mass (g)"]
+    penguins = data.penguins().dropna(subset=[*cols, "Species"])
+    frame = penguins.groupby("Species", observed=True).head(15).reset_index(drop=True)
+
+    fig, ax = plt.subplots(figsize=(6, 2.4))
+    andrews_curves(frame[[*cols, "Species"]], "Species", ax=ax)
     fig
     ```
 
-    <PythonChartOutput library="matplotlib" sessionId="matplotlib-vizlike" />
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-vizlike" pattern="vizlike" />
 
     ```python
     import chartout
@@ -91,34 +102,51 @@ The user picks the product inside the widget. Use this for general "print this c
 
 ## CartItem
 
-You pre-select a specific product. The store opens with that product already loaded.
+You pre-select a specific product with your viz as item. The store opens with that item loaded in the cart.
+
+Because you name the product, you need its id. Call `chartout.products()` to list the catalogue and pick one whose `print_ratio` suits your chart, here a square scatter for the 1:1 canvas.
 
 <Tabs items={['Vega-Altair', 'matplotlib']}>
   <Tab value="Vega-Altair">
-    We start with creating an Altair chart specification:
+    We start with a square Altair chart, matching the canvas print ratio:
 
     ```python
     import altair as alt
+    from altair.datasets import data
 
-    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
+    penguins = data.penguins().dropna()
 
-    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
-        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
-        alt.Y("count()", title="Count"),
-    )
+    chart = alt.Chart(penguins).mark_circle(opacity=0.7, size=28).encode(
+        alt.X("Flipper Length (mm):Q").scale(zero=False),
+        alt.Y("Body Mass (g):Q").scale(zero=False),
+        alt.Color("Species:N"),
+    ).properties(width=240, height=240)
     chart
     ```
 
-    <PythonChartOutput library="altair" sessionId="altair-cartitem" />
+    <PythonChartOutput library="altair" sessionId="altair-cartitem" pattern="cartItem" />
+
+    List the catalogue to find product ids and print ratios:
 
     ```python
     import chartout
 
+    chartout.products()
+    # [{'name': 'Canvas (10″x10″)', 'id': 'canvas_10x10',
+    #   'placements': [{'id': 'default', 'print_ratio': '1:1'}]},
+    #  {'name': 'Ceramic Mug with Color Inside (Black / 11 oz)', 'id': 'mug_black_11oz',
+    #   'placements': [{'id': 'default', 'print_ratio': '18:7'}]},
+    #  {'name': 'Mouse Pad (White / 8.7″x7.1″)', 'id': 'mousepad_white_8x7',
+    #   'placements': [{'id': 'default', 'print_ratio': '6:5'}]}, ...]
+    ```
+
+    ```python
     item = chartout.item(
-        "mug_green_11oz",
+        "canvas_10x10",
         chart,
-        name="Green Mug with my Viz",
+        name="My Canvas (10″×10″)",
         quantity=1,
+        scale=0.8,
     )
     store = chartout.Store(item)
     store
@@ -126,61 +154,39 @@ You pre-select a specific product. The store opens with that product already loa
 
     <PythonStoreOutput sessionId="altair-cartitem" pattern="cartItem" />
   </Tab>
-  <Tab value="Mosaic vgplot">
-    ```python
-    import vgplot as vg
-
-    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-
-    view = vg.plot(
-        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
-        vg.width(400),
-        vg.height(300),
-    )
-    view
-    ```
-
-    <PythonChartOutput library="vgplot" sessionId="vgplot-cartitem" />
-
-    vgplot support is planned — the store call below shows the intended API once available.
-
-    ```python
-    import chartout
-
-    item = chartout.item(
-        "mug_green_11oz",
-        vg.spec(),
-        name="Green Mug with my Viz",
-        quantity=1,
-    )
-    store = chartout.Store(item)
-    store
-    ```
-
-    <PythonStoreOutput sessionId="vgplot-cartitem" pattern="cartItem" />
-  </Tab>
   <Tab value="matplotlib">
     ```python
     import matplotlib.pyplot as plt
-    import pandas as pd
+    from altair.datasets import data
 
-    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-    fig, ax = plt.subplots(figsize=(6, 3))
-    ax.hist(df["eruptions"], bins=20, color="steelblue")
-    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
+    penguins = data.penguins().dropna()
+
+    fig, ax = plt.subplots(figsize=(3, 3))
+    for species, grp in penguins.groupby("Species"):
+        ax.scatter(grp["Flipper Length (mm)"], grp["Body Mass (g)"], s=12, alpha=0.7, label=species)
+    ax.set(xlabel="Flipper Length (mm)", ylabel="Body Mass (g)")
     fig
     ```
 
-    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cartitem" />
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cartitem" pattern="cartItem" />
+
+    List the catalogue to find product ids and print ratios:
 
     ```python
     import chartout
 
+    chartout.products()
+    # [{'name': 'Canvas (10″x10″)', 'id': 'canvas_10x10',
+    #   'placements': [{'id': 'default', 'print_ratio': '1:1'}]}, ...]
+    ```
+
+    ```python
     item = chartout.item(
-        "mug_green_11oz",
+        "canvas_10x10",
         fig,
-        name="Green Mug with my Viz",
+        name="My Canvas (10″×10″)",
         quantity=1,
+        scale=0.8,
     )
     store = chartout.Store(item)
     store
@@ -192,31 +198,80 @@ You pre-select a specific product. The store opens with that product already loa
 
 ## Cart
 
-You build the entire cart upfront.
+You build the entire cart with multiple items upfront. Each product can carry a different chart, sized to its print ratio.
+
+Call `chartout.products()` first to look up each product id and its `print_ratio`: a square scatter for the 1:1 canvas, wide Andrews curves for the 18:7 mug, and a near-square density for the 6:5 mousepad.
 
 <Tabs items={['Vega-Altair', 'matplotlib']}>
   <Tab value="Vega-Altair">
     ```python
+    import numpy as np
+    import pandas as pd
     import altair as alt
+    from altair.datasets import data
 
-    source = alt.Data(url="https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.json")
+    cols = ["Beak Length (mm)", "Beak Depth (mm)", "Flipper Length (mm)", "Body Mass (g)"]
+    penguins = data.penguins().dropna(subset=[*cols, "Species"])
 
-    chart = alt.Chart(source).mark_bar(color="steelblue").encode(
-        alt.X("eruptions:Q", bin=alt.Bin(maxbins=20), title="Eruption duration (min)"),
-        alt.Y("count()", title="Count"),
-    )
-    chart
+    # square scatter → canvas (1:1)
+    canvas_chart = alt.Chart(penguins).mark_circle(opacity=0.7, size=28).encode(
+        alt.X("Flipper Length (mm):Q").scale(zero=False),
+        alt.Y("Body Mass (g):Q").scale(zero=False),
+        alt.Color("Species:N"),
+    ).properties(width=240, height=240)
+
+    # wide Andrews curves → mug (18:7)
+    frame = penguins.groupby("Species", observed=True).head(15).reset_index(drop=True)
+    t = np.linspace(-np.pi, np.pi, 100)
+    v = frame[cols].to_numpy(dtype=float)
+    v = ((v - v.min(0)) / (v.max(0) - v.min(0))).T
+    curves = np.outer(v[0], np.ones_like(t)) / np.sqrt(2)
+    for i in range(1, len(v)):
+        curves += np.outer(v[i], (np.sin if i % 2 else np.cos)(((i + 1) // 2) * t))
+    andrews = pd.DataFrame({
+        "t": np.tile(t, len(frame)),
+        "value": curves.ravel(),
+        "sample": np.repeat(np.arange(len(frame)), 100),
+        "Species": np.repeat(frame["Species"].to_numpy(), 100),
+    })
+    mug_chart = alt.Chart(andrews).mark_line(opacity=0.5).encode(
+        x=alt.X("t:Q").title(None),
+        y=alt.Y("value:Q").title(None),
+        color="Species:N",
+        detail="sample:N",
+    ).properties(width=468, height=182)
+
+    # near-square density → mousepad (6:5)
+    mousepad_chart = alt.Chart(penguins).mark_rect().encode(
+        alt.X("Beak Length (mm):Q").bin(maxbins=20),
+        alt.Y("Beak Depth (mm):Q").bin(maxbins=20),
+        alt.Color("count():Q").scale(scheme="blues"),
+    ).properties(width=252, height=210)
+
+    canvas_chart | mug_chart | mousepad_chart
     ```
 
-    <PythonChartOutput library="altair" sessionId="altair-cart" />
+    <PythonChartOutput library="altair" sessionId="altair-cart" pattern="cart" />
+
+    Look up the product ids and print ratios:
 
     ```python
     import chartout
 
+    chartout.products()
+    # [{'name': 'Canvas (10″x10″)', 'id': 'canvas_10x10',
+    #   'placements': [{'id': 'default', 'print_ratio': '1:1'}]},
+    #  {'name': 'Ceramic Mug with Color Inside (Black / 11 oz)', 'id': 'mug_black_11oz',
+    #   'placements': [{'id': 'default', 'print_ratio': '18:7'}]},
+    #  {'name': 'Mouse Pad (White / 8.7″x7.1″)', 'id': 'mousepad_white_8x7',
+    #   'placements': [{'id': 'default', 'print_ratio': '6:5'}]}, ...]
+    ```
+
+    ```python
     cart = chartout.Cart([
-        chartout.item("mug_black_11oz", chart, horizontal="left", quantity=2),
-        chartout.item("canvas_16x32_horizontal", chart, horizontal="right", quantity=3),
-        chartout.item("mousepad_white_8x7", chart, horizontal="right", quantity=3),
+        chartout.item("canvas_10x10", canvas_chart, name="My Canvas (10″×10″)", quantity=1, scale=0.8),
+        chartout.item("mug_black_11oz", mug_chart, name="My Mug (11 oz)", quantity=2),
+        chartout.item("mousepad_white_8x7", mousepad_chart, name="My Mousepad (8″×7″)", quantity=2, scale=0.9),
     ])
     store = chartout.Store(cart)
     store
@@ -224,60 +279,50 @@ You build the entire cart upfront.
 
     <PythonStoreOutput sessionId="altair-cart" pattern="cart" />
   </Tab>
-  <Tab value="Mosaic vgplot">
-    ```python
-    import vgplot as vg
-
-    faithful = vg.csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-
-    view = vg.plot(
-        vg.rectY(faithful, vg.binX("count", "eruptions"), fill="steelblue"),
-        vg.width(400),
-        vg.height(300),
-    )
-    view
-    ```
-
-    <PythonChartOutput library="vgplot" sessionId="vgplot-cart" />
-
-    vgplot support is planned — the store call below shows the intended API once available.
-
-    ```python
-    import chartout
-
-    spec = vg.spec()
-    cart = chartout.Cart([
-        chartout.item("mug_black_11oz", spec, horizontal="left", quantity=2),
-        chartout.item("canvas_16x32_horizontal", spec, horizontal="right", quantity=3),
-        chartout.item("mousepad_white_8x7", spec, horizontal="right", quantity=3),
-    ])
-    store = chartout.Store(cart)
-    store
-    ```
-
-    <PythonStoreOutput sessionId="vgplot-cart" pattern="cart" />
-  </Tab>
   <Tab value="matplotlib">
     ```python
     import matplotlib.pyplot as plt
-    import pandas as pd
+    from pandas.plotting import andrews_curves
+    from altair.datasets import data
 
-    df = pd.read_csv("https://cdn.jsdelivr.net/npm/vega-datasets@2/data/faithful.csv")
-    fig, ax = plt.subplots(figsize=(6, 3))
-    ax.hist(df["eruptions"], bins=20, color="steelblue")
-    ax.set(xlabel="Eruption duration (min)", ylabel="Count")
-    fig
+    cols = ["Beak Length (mm)", "Beak Depth (mm)", "Flipper Length (mm)", "Body Mass (g)"]
+    penguins = data.penguins().dropna(subset=[*cols, "Species"])
+
+    # square scatter → canvas (1:1)
+    canvas_fig, ax = plt.subplots(figsize=(3, 3))
+    for species, grp in penguins.groupby("Species"):
+        ax.scatter(grp["Flipper Length (mm)"], grp["Body Mass (g)"], s=12, alpha=0.7, label=species)
+    ax.set(xlabel="Flipper Length (mm)", ylabel="Body Mass (g)")
+
+    # wide Andrews curves → mug (18:7)
+    frame = penguins.groupby("Species", observed=True).head(15).reset_index(drop=True)
+    mug_fig, ax = plt.subplots(figsize=(6, 2.4))
+    andrews_curves(frame[[*cols, "Species"]], "Species", ax=ax)
+
+    # near-square density → mousepad (6:5)
+    mousepad_fig, ax = plt.subplots(figsize=(3, 2.5))
+    ax.hist2d(penguins["Beak Length (mm)"], penguins["Beak Depth (mm)"], bins=20, cmap="Blues")
+    ax.set(xlabel="Beak Length (mm)", ylabel="Beak Depth (mm)")
     ```
 
-    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cart" />
+    <PythonChartOutput library="matplotlib" sessionId="matplotlib-cart" pattern="cart" />
+
+    Look up the product ids and print ratios:
 
     ```python
     import chartout
 
+    chartout.products()
+    # [{'name': 'Canvas (10″x10″)', 'id': 'canvas_10x10', ...},
+    #  {'name': 'Ceramic Mug with Color Inside (Black / 11 oz)', 'id': 'mug_black_11oz', ...},
+    #  {'name': 'Mouse Pad (White / 8.7″x7.1″)', 'id': 'mousepad_white_8x7', ...}]
+    ```
+
+    ```python
     cart = chartout.Cart([
-        chartout.item("mug_black_11oz", fig, horizontal="left", quantity=2),
-        chartout.item("canvas_16x32_horizontal", fig, horizontal="right", quantity=3),
-        chartout.item("mousepad_white_8x7", fig, horizontal="right", quantity=3),
+        chartout.item("canvas_10x10", canvas_fig, name="My Canvas (10″×10″)", quantity=1, scale=0.8),
+        chartout.item("mug_black_11oz", mug_fig, name="My Mug (11 oz)", quantity=2),
+        chartout.item("mousepad_white_8x7", mousepad_fig, name="My Mousepad (8″×7″)", quantity=2, scale=0.9),
     ])
     store = chartout.Store(cart)
     store

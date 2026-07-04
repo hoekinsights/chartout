@@ -1,6 +1,5 @@
 ---
 title: API reference
-description: Full reference for the chartout JavaScript package.
 ---
 
 The chartout JavaScript API embeds the store widget in any web app. Create a state model with `createChartoutModel`, mount the widget with `ChartoutWidget` or `mount`, pick products from `products()`, rasterise charts with `svgToBytes`, and load content with `openWithViz`, `openWithItem`, or `openWithCart`.
@@ -123,7 +122,7 @@ The supported _fields_ are:
 - _id_: Placement id from the [product catalogue](#products) (e.g. `"default"`).
 - _content_: `Uint8Array` PNG bytes, or a string URL in some internal flows.
 
-Look up valid ids and _print_ratio_ per product from `GET /v1/products/`. For alignment, use [`openWithItem`](#openwithitem) with a [`Position`](#position), or set `user_position` on the placement object when calling `model.set()` directly.
+Look up valid ids and _print_ratio_ per product with [`products()`](#products). For alignment, use [`openWithItem`](#openwithitem) with a [`Position`](#position), or set `user_position` on the placement object when calling `model.set()` directly.
 
 ---
 

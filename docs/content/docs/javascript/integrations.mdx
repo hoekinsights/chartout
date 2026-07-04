@@ -1,6 +1,5 @@
 ---
 title: Integrations
-description: Embed chartout in React, vanilla JavaScript, Vue, and Svelte.
 ---
 
 import { Tab, Tabs } from '@/components/docs/Tabs'
@@ -9,10 +8,10 @@ Pick an embedding path based on your app stack. All paths share the same model a
 
 | Your app | Import | You provide |
 |----------|--------|-------------|
-| React 19+ | `chartout/react` | `react`, `react-dom` |
-| Vanilla JS / static HTML | `chartout/mount` | nothing extra |
-| Vue | `chartout/mount` | nothing extra |
-| Svelte | `chartout/mount` | nothing extra |
+| [React](#react) | `chartout/react` | `react`, `react-dom` |
+| [Vanilla JS / static HTML](#vanilla-js) | `chartout/mount` | nothing extra |
+| [Vue](#vue) | `chartout/mount` | nothing extra |
+| [Svelte](#svelte) | `chartout/mount` | nothing extra |
 
 ## Package exports
 
@@ -23,9 +22,7 @@ Pick an embedding path based on your app stack. All paths share the same model a
 | `chartout/react` | `ChartoutWidget` for React apps |
 | `chartout/mount` | `mount()` for vanilla JS, Vue, Svelte, and other non-React hosts |
 
-`chartout/react` is for React 19+ apps: install `react` and `react-dom` as peers, and the widget shares your React instance. `chartout/mount` is self-contained for other hosts; the bundle is larger because it ships everything needed to render the store.
-
-Peer dependencies on `react` and `react-dom` (>=19) are **optional**. Install them only with `chartout/react`:
+`chartout/react` is for React 19+ apps: install `react` and `react-dom` as peers, and the widget shares your React instance. `chartout/mount` is self-contained for other hosts.
 
 ```bash
 npm install chartout react react-dom
@@ -178,14 +175,14 @@ The store is a **browser-only** UI. It needs a DOM and does not run on a server.
 `chartout/mount` and `chartout/react` ship a prebuilt widget bundle. You do not install its internals separately. The bundle already includes:
 
 - **Three.js** for the 3D product preview
-- **skia-canvas** for compositing chart PNGs onto the product mockup and updating the 3D texture
+- **skia-canvas** for compositing chart PNGs onto the product mockup
 - **anywidget** utilities and other UI code
 
 You do not add these to your `package.json`. If you use a meta-framework with server-side rendering, a server build may fail on `skia-canvas` even though the widget only runs in the browser. Import chartout in client code only; see [SSR and meta-frameworks](#ssr-and-meta-frameworks) if the build still errors.
 
 ### Layout
 
-The store UI has a fixed height of about 357px, sized for VS Code notebook cell output where chartout was first embedded. The layout is fully responsive in width; set the container width (e.g. `width: '100%'` on the mount container or `style` prop on `ChartoutWidget`).
+The store UI has a fixed height of about 357px, sized for notebook cell output where chartout was first embedded. The layout is fully responsive in width; set the container width (e.g. `width: '100%'` on the mount container or `style` prop on `ChartoutWidget`).
 
 Flexible height may be supported in a future release. [Open an issue](https://github.com/hoekinsights/chartout/issues) if that matters for your app.
 
@@ -195,7 +192,7 @@ Flexible height may be supported in a future release. [Open an issue](https://gi
 
 Call it yourself when building `CartItem[]` for `openWithCart`. For `openWithViz` and `openWithItem`, pass an SVG and those helpers call `svgToBytes` internally.
 
-It lives in the slim `chartout/store` bundle, separate from the widget UI that handles the 3D preview and placement interactions.
+It lives in the slim `chartout/store` bundle, separate from the widget UI.
 
 ### SSR and meta-frameworks
 

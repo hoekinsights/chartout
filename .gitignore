@@ -26,6 +26,7 @@ venv/
 # Jupyter
 .ipynb_checkpoints
 test_*.ipynb
+__marimo__/
 
 # Type checkers
 .mypy_cache/
@@ -53,3 +54,4 @@ docs/.source/
 
 # Misc
 .DS_Store
+python/chartout.ipynb

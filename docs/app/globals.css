@@ -22,6 +22,7 @@ h1 {
   font-weight: 600;
   line-height: 40px;
   letter-spacing: -0.64px;
+  padding-bottom: 16px;
   color: #4E46DD;
 }
 
@@ -40,6 +41,7 @@ h3, h4, h5, h6 {
 #nd-page article {
   --chartout-article-pad: 24px;
   padding-inline: var(--chartout-article-pad) !important;
+  padding-bottom: 100px !important;
 }
 
 @media (min-width: 768px) {
@@ -100,4 +102,15 @@ figure.shiki {
 
 figure.shiki pre {
   background-color: transparent !important;
+}
+
+/* Demo chart SVGs (Python example page): render each viz 200px tall, deriving
+   width from the SVG viewBox aspect ratio. Overrides the intrinsic width/height on
+   the injected <svg> (e.g. matplotlib's "…pt" sizes). max-width keeps wide charts
+   (e.g. the Andrews curves) from overflowing the article. */
+.chartout-demo-chart > svg {
+  display: block;
+  height: 200px;
+  width: auto;
+  max-width: 100%;
 }

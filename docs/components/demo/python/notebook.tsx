@@ -1,20 +1,35 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChartoutWidget } from 'chartout/react'
-import {
-  AltairChartRenderer,
-  MatplotlibChartRenderer,
-  VgplotChartRenderer,
-} from './chartRenderers'
+import { StaticSvgRenderer } from './chartRenderers'
 import { ChartCell, StoreCell } from './NotebookOutput'
 import { openStorePattern, type StorePattern } from './openStore'
-import { getSessionModel, getSessionSvg, subscribeSessionSvg } from './session'
+import { getSessionModel, getSessionSvgs, setSessionSvgs, subscribeSessionSvgs } from './session'
 
 export type ChartLibrary = 'altair' | 'vgplot' | 'matplotlib'
+
+type ChartName = 'scatter' | 'andrews' | 'heatmap'
+
+// Each store pattern shows the chart(s) whose ratios suit its product(s):
+//   vizlike → one wide Andrews-curve chart; cartItem → one square scatter (canvas);
+//   cart → scatter (canvas 1:1) + Andrews (mug 18:7) + heatmap (mousepad 6:5).
+// Each viz renders 200px tall (see .chartout-demo-chart in globals.css).
+const PATTERN_CHARTS: Record<StorePattern, ChartName[]> = {
+  vizlike: ['andrews'],
+  cartItem: ['scatter'],
+  cart: ['scatter', 'andrews', 'heatmap'],
+}
+
+// vgplot has no pre-rendered assets yet (support is planned); reuse the Altair SVGs.
+function assetSrc(library: ChartLibrary, chart: ChartName): string {
+  const lib = library === 'vgplot' ? 'altair' : library
+  return `/charts/penguins-${lib}-${chart}.svg`
+}
 
 type PythonChartOutputProps = {
   library: ChartLibrary
   sessionId: string
+  pattern: StorePattern
 }
 
 type PythonStoreOutputProps = {
@@ -22,32 +37,61 @@ type PythonStoreOutputProps = {
   pattern: StorePattern
 }
 
-function useSessionSvg(sessionId: string) {
-  const [svg, setSvg] = useState<SVGSVGElement | null>(() => getSessionSvg(sessionId))
+export function PythonChartOutput({ library, sessionId, pattern }: PythonChartOutputProps) {
+  const charts = PATTERN_CHARTS[pattern]
 
-  useEffect(() => subscribeSessionSvg(sessionId, () => setSvg(getSessionSvg(sessionId))), [sessionId])
+  // Collect one SVG per chart, then publish to the session once all are ready.
+  const collected = useRef<(SVGSVGElement | null)[]>([])
+  useEffect(() => {
+    collected.current = new Array(charts.length).fill(null)
+  }, [sessionId, library, pattern, charts.length])
 
-  return svg
-}
+  const reportSvg = useCallback(
+    (index: number, svg: SVGSVGElement) => {
+      collected.current[index] = svg
+      if (collected.current.every((s) => s !== null)) {
+        setSessionSvgs(sessionId, collected.current as SVGSVGElement[])
+      }
+    },
+    [sessionId],
+  )
 
-export function PythonChartOutput({ library, sessionId }: PythonChartOutputProps) {
   return (
     <ChartCell>
-      {library === 'altair' && <AltairChartRenderer sessionId={sessionId} />}
-      {library === 'vgplot' && <VgplotChartRenderer sessionId={sessionId} />}
-      {library === 'matplotlib' && <MatplotlibChartRenderer sessionId={sessionId} />}
+      <div className={charts.length > 1 ? 'flex gap-3 flex-wrap items-end' : undefined}>
+        {charts.map((chart, i) => (
+          <div key={`${chart}-${i}`} className="min-w-0">
+            <StaticSvgRenderer src={assetSrc(library, chart)} onSvg={(svg) => reportSvg(i, svg)} />
+          </div>
+        ))}
+      </div>
     </ChartCell>
   )
 }
 
+function useSessionSvgs(sessionId: string) {
+  const [svgs, setSvgs] = useState<SVGSVGElement[]>(() => getSessionSvgs(sessionId))
+  useEffect(
+    () => subscribeSessionSvgs(sessionId, () => setSvgs([...getSessionSvgs(sessionId)])),
+    [sessionId],
+  )
+  return svgs
+}
+
 export function PythonStoreOutput({ sessionId, pattern }: PythonStoreOutputProps) {
-  const svg = useSessionSvg(sessionId)
+  const svgs = useSessionSvgs(sessionId)
   const model = getSessionModel(sessionId)
+  const needed = PATTERN_CHARTS[pattern].length
+  const openedRef = useRef(false)
 
   useEffect(() => {
-    if (!svg) return
-    void openStorePattern(sessionId, pattern, svg)
-  }, [sessionId, pattern, svg])
+    if (svgs.length < needed || openedRef.current) return
+    openedRef.current = true
+    void openStorePattern(sessionId, pattern, getSessionSvgs(sessionId)).catch((err) => {
+      openedRef.current = false
+      console.error('chartout docs demo: failed to open store', err)
+    })
+  }, [sessionId, pattern, needed, svgs.length])
 
   return (
     <StoreCell>

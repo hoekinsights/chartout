@@ -5,7 +5,7 @@ index: true
 
 import { Tab, Tabs } from '@/components/docs/Tabs'
 
-Install chartout and place your first order from a notebook. Requires Python 3.11 or higher.
+Install chartout and place your first order from a notebook.
 
 For JupyterLab, VS Code, Positron, Marimo, and Colab setup notes, see [Environments](/docs/python/environments).
 
@@ -39,7 +39,7 @@ print(chartout.__version__)
 
 ChartOut has exactly two hard dependencies. [`anywidget`](https://anywidget.dev) provides the bridge between Python and the browser widget, and [`traitlets`](https://traitlets.readthedocs.io) handles the typed state that keeps them in sync. That is all. No chart library is required. ChartOut only uses the libraries you pass into it, following the "support all, depend on none" design.
 
-Currently supported chart libraries are Altair and matplotlib. Pass a chart or figure directly to `chartout.Store` and ChartOut handles the conversion to a print-ready image. Support for [vgplot](https://idl.uw.edu/mosaic/vgplot/) and other libraries is planned. Contributions are welcome.
+Currently supported chart libraries are Altair and matplotlib. Pass a chart or figure directly to `chartout.Store` and ChartOut handles the conversion to a print-ready image. Support for other libraries is planned. Contributions are welcome.
 
 ## Next steps
 

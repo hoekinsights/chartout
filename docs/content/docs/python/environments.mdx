@@ -1,18 +1,73 @@
 ---
 title: Environments
-description: Run chartout in JupyterLab, VS Code, Positron, Marimo, and Google Colab.
 ---
 
 import { Tab, Tabs } from '@/components/docs/Tabs'
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion'
+import { BarleyChart } from '@/components/demo/python'
 
-Chartout is a Jupyter widget built on [anywidget](https://anywidget.dev). It runs anywhere the Jupyter widget protocol is supported. Requires Python 3.11 or higher.
+Chartout is a Jupyter widget built on [anywidget](https://anywidget.dev). It runs anywhere the Jupyter widget protocol is supported.
+On this page we show how chartout runs in environments such as JupyterLab, VS Code, Positron, Marimo, and Google Colab.
 
 Display the store by evaluating a cell that returns `chartout.Store(...)` as the last expression.
 
-Screenshots for each environment can be added under `public/environments/` (e.g. `jupyterlab.png`) and embedded per tab when ready.
+Every environment below reuses the same `chart`. Create it once with Vega-Altair:
 
-<Tabs items={['JupyterLab', 'VS Code', 'Positron', 'Marimo', 'Colab']}>
-  <Tab value="JupyterLab">
+<Accordions type="single">
+  <Accordion title="Chart definition (Vega-Altair)">
+    ```python
+    import altair as alt
+    from altair.datasets import data
+
+    chart = alt.Chart(data.barley.url,
+        title='Barley Yield comparison between 1932 and 1931'
+    ).mark_trail().encode(
+        alt.X('year:O').title(None),
+        alt.Y('variety:N').title('Variety'),
+        alt.Size('yield:Q')
+            .scale(range=[0, 12])
+            .legend(values=[20, 60])
+            .title('Barley Yield (bushels/acre)'),
+        alt.Color('delta:Q')
+            .scale(domainMid=0)
+            .title('Yield Delta (%)'),
+        alt.Tooltip(['year:O', 'yield:Q']),
+        alt.Column('site:N').title('Site')
+    ).transform_pivot(
+        "year",
+        value="yield",
+        groupby=["variety", "site"]
+    ).transform_fold(
+        ["1931", "1932"],
+        as_=["year", "yield"]
+    ).transform_calculate(
+        calculate="datum['1932'] - datum['1931']",
+        as_="delta"
+    ).configure_legend(
+        orient='bottom',
+        direction='horizontal'
+    ).configure_view(
+        stroke=None
+    ).properties(width=100)
+    chart
+    ```
+  </Accordion>
+</Accordions>
+
+<BarleyChart />
+
+## JupyterLab [toc] [#jupyterlab]
+
+## VS Code [toc] [#vscode]
+
+## Positron [toc] [#positron]
+
+## Marimo [toc] [#marimo]
+
+## Colab [toc] [#colab]
+
+<Tabs items={['JupyterLab', 'VS Code', 'Positron', 'Marimo', 'Colab']} updateAnchor>
+  <Tab value="JupyterLab" id="jupyterlab">
     JupyterLab is the primary development target. Install chartout in the kernel environment, then create a notebook:
 
     ```bash
@@ -20,26 +75,31 @@ Screenshots for each environment can be added under `public/environments/` (e.g.
     ```
 
     ```python
-    import altair as alt
     import chartout
 
-    chart = alt.Chart(...).mark_point()
-    chartout.Store(chart)
+    store = chartout.Store(chart)
+    store
     ```
 
     The widget loads the store UI inline in the output area. State syncs between Python and the browser through traitlets.
+
+    ![Chartout store widget running in JupyterLab](/environments/jupyterlab.png)
   </Tab>
-  <Tab value="VS Code">
+  <Tab value="VS Code" id="vscode">
     Use the [Jupyter extension](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter) for VS Code or Cursor. Select a Python 3.11+ interpreter with chartout installed, open or create a `.ipynb` notebook, and run the same code as in JupyterLab:
 
     ```python
     import chartout
-    chartout.Store(my_chart)
+
+    store = chartout.Store(chart)
+    store
     ```
 
     Widget output renders in the notebook cell output panel. If the widget does not appear, confirm the kernel matches the environment where you installed chartout (`pip show chartout` in a notebook cell).
+
+    ![Chartout store widget running in VS Code](/environments/vscode.png)
   </Tab>
-  <Tab value="Positron">
+  <Tab value="Positron" id="positron">
     [Positron](https://posit.co/products/open-source/positron/) supports Jupyter notebooks with the same widget stack. Install chartout in the Positron Python environment:
 
     ```bash
@@ -48,10 +108,14 @@ Screenshots for each environment can be added under `public/environments/` (e.g.
 
     ```python
     import chartout
-    chartout.Store(chartout.item("canvas_10x10", chart, name="My canvas"))
+
+    store = chartout.Store(chart)
+    store
     ```
+
+    ![Chartout store widget running in Positron](/environments/positron.png)
   </Tab>
-  <Tab value="Marimo">
+  <Tab value="Marimo" id="marimo">
     [Marimo](https://marimo.io) notebooks can host anywidget components. Install chartout in the marimo environment and import as usual:
 
     ```bash
@@ -62,13 +126,19 @@ Screenshots for each environment can be added under `public/environments/` (e.g.
     import marimo as mo
     import chartout
 
-    store = chartout.Store(my_chart)
+    store = chartout.Store(chart)
     mo.ui.anywidget(store)
     ```
 
     Wrap the widget with `mo.ui.anywidget` so marimo renders the anywidget model. Exact import patterns may vary with marimo version; check marimo docs if the widget output is empty.
+
+    <Callout type="warn">
+      Marimo does not render the widget yet. Instead of the store it shows the error `Refusing to load anywidget module from untrusted URL` (visible in the screenshot below).
+    </Callout>
+
+    ![Chartout store widget running in Marimo](/environments/marimo.png)
   </Tab>
-  <Tab value="Colab">
+  <Tab value="Colab" id="colab">
     Google Colab requires an explicit install each session (unless you use a custom runtime image):
 
     ```python
@@ -77,10 +147,14 @@ Screenshots for each environment can be added under `public/environments/` (e.g.
 
     ```python
     import chartout
-    chartout.Store(my_chart)
+
+    store = chartout.Store(chart)
+    store
     ```
 
     Colab supports Jupyter widgets in most cases. Checkout opens in a new browser tab via the widget's URL handler. Network access to the ChartOut API must be available from the Colab runtime.
+
+    ![Chartout store widget running in Google Colab](/environments/colab.png)
   </Tab>
 </Tabs>
 

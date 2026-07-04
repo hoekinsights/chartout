@@ -1,0 +1,98 @@
+{
+  "config": {
+    "view": {
+      "continuousWidth": 300,
+      "continuousHeight": 300,
+      "stroke": null
+    },
+    "legend": {
+      "direction": "horizontal",
+      "orient": "bottom"
+    }
+  },
+  "data": {
+    "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v3.2.1/data/barley.json"
+  },
+  "mark": {
+    "type": "trail"
+  },
+  "encoding": {
+    "color": {
+      "field": "delta",
+      "scale": {
+        "domainMid": 0
+      },
+      "title": "Yield Delta (%)",
+      "type": "quantitative"
+    },
+    "column": {
+      "field": "site",
+      "title": "Site",
+      "type": "nominal"
+    },
+    "size": {
+      "field": "yield",
+      "legend": {
+        "values": [
+          20,
+          60
+        ]
+      },
+      "scale": {
+        "range": [
+          0,
+          12
+        ]
+      },
+      "title": "Barley Yield (bushels/acre)",
+      "type": "quantitative"
+    },
+    "tooltip": [
+      {
+        "field": "year",
+        "type": "ordinal"
+      },
+      {
+        "field": "yield",
+        "type": "quantitative"
+      }
+    ],
+    "x": {
+      "field": "year",
+      "title": null,
+      "type": "ordinal"
+    },
+    "y": {
+      "field": "variety",
+      "title": "Variety",
+      "type": "nominal"
+    }
+  },
+  "title": "Barley Yield comparison between 1932 and 1931",
+  "transform": [
+    {
+      "pivot": "year",
+      "value": "yield",
+      "groupby": [
+        "variety",
+        "site"
+      ]
+    },
+    {
+      "fold": [
+        "1931",
+        "1932"
+      ],
+      "as": [
+        "year",
+        "yield"
+      ]
+    },
+    {
+      "calculate": "datum['1932'] - datum['1931']",
+      "as": "delta"
+    }
+  ],
+  "width": 100,
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json"
+}
