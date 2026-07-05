@@ -10,10 +10,10 @@
 
 ## Highlights
 
-- **Works with your chart library** — Python: Altair and matplotlib today; JavaScript: Observable Plot and ECharts, plus any library that renders SVG
-- **Flexible integration** — let users pick a product, preselect one, or build the cart ahead of time
-- **Real-time 3D preview** — interactive mockups with fine-grained placement controls
-- **Ships worldwide** — printed on demand and delivered to most countries
+- **Works with your chart library.** Python: Altair and matplotlib today; JavaScript: Observable Plot and ECharts, plus any library that renders SVG.
+- **Flexible integration.** Let users pick a product, preselect one, or build the cart ahead of time.
+- **Real-time 3D preview.** Interactive mockups with fine-grained placement controls.
+- **Ships worldwide.** Printed on demand and delivered to most countries.
 
 ChartOut follows a "support all, depend on none" design: only `anywidget` and `traitlets` are required on the Python side. Chart libraries are optional extras.
 
@@ -40,7 +40,7 @@ item = chartout.item("mug_black_11oz", chart)
 store = chartout.Store(item)
 ```
 
-See [Python docs](https://hoekinsights.github.io/chartout/docs/python) for environments (JupyterLab, VS Code, Marimo, Colab), `Cart` patterns, and the full API.
+See [Python docs](https://hoekinsights.github.io/chartout/docs/python) for environments (JupyterLab, VS Code, etc), `Cart` patterns, and the full API.
 
 ### JavaScript / React
 
@@ -66,11 +66,11 @@ The npm package also supports Vue, Svelte, and vanilla JS via `chartout/mount`. 
 
 ## How it works
 
-1. **Create your chart** in a notebook or web app with the tools you already use
-2. **Preview in the store** — browse products, adjust placement on a 3D mockup
-3. **Checkout** — payment runs in a secure hosted flow; orders are printed on demand and shipped worldwide
+1. **Create your chart** in a notebook or web app with the tools you already use.
+2. **Preview in the store.** Browse products, adjust placement on a 3D mockup.
+3. **Checkout.** Payment runs in a secure hosted flow; orders are printed on demand and shipped worldwide.
 
-For architecture, payment flow, and design notes, see [How it works](https://hoekinsights.github.io/chartout/docs/how-it-works) in the docs.
+For architecture and design notes, see [How it works](https://hoekinsights.github.io/chartout/docs/how-it-works) in the docs.
 
 ## Repository layout
 
