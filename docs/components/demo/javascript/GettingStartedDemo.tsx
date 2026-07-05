@@ -103,9 +103,7 @@ export function ChartPreview() {
 
   return (
     <>
-      <div className="not-prose chartout-vega-preview my-6">
-        <div ref={containerRef} />
-      </div>
+      <div className="not-prose chartout-vega-preview my-6" ref={containerRef} />
 
       {modalOpen && (
         <div

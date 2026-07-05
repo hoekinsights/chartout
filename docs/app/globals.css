@@ -120,14 +120,23 @@ figure.shiki > div {
   max-width: 100%;
 }
 
-/* Vega-Embed preview (Get Started): wide faceted charts scroll horizontally
-   instead of overflowing the article. Keeps the rendered spec unchanged for
-   export / Open in Store. Alternatives: autosize fit-x in the spec (reflows
-   columns to container width) or a smaller per-facet width in the JSON spec. */
+/* Vega-Embed preview (Get Started): wide charts scroll horizontally. Keep the ⋯
+   at the visible top-right (sticky) instead of the chart's far right edge. */
 .chartout-vega-preview {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.chartout-vega-preview .vega-embed summary {
+  position: sticky;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+}
+
+.chartout-vega-preview .vega-embed .vega-actions {
+  right: 0;
 }
 
 /* ChartPreview "Open in Store" modal */
