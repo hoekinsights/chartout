@@ -104,6 +104,11 @@ figure.shiki pre {
   background-color: transparent !important;
 }
 
+/* Cap code block height at 500px (Fumadocs defaults to 600px); scroll beyond that. */
+figure.shiki > div {
+  max-height: 400px !important;
+}
+
 /* Demo chart SVGs (Python example page): render each viz 200px tall, deriving
    width from the SVG viewBox aspect ratio. Overrides the intrinsic width/height on
    the injected <svg> (e.g. matplotlib's "…pt" sizes). max-width keeps wide charts
@@ -113,4 +118,70 @@ figure.shiki pre {
   height: 200px;
   width: auto;
   max-width: 100%;
+}
+
+/* Vega-Embed preview (Get Started): wide faceted charts scroll horizontally
+   instead of overflowing the article. Keeps the rendered spec unchanged for
+   export / Open in Store. Alternatives: autosize fit-x in the spec (reflows
+   columns to container width) or a smaller per-facet width in the JSON spec. */
+.chartout-vega-preview {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ChartPreview "Open in Store" modal */
+.chartout-store-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 2rem;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.chartout-store-modal-panel {
+  width: 100%;
+  max-width: 48rem;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background-color: #fff;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+}
+
+.chartout-store-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fff;
+}
+
+.chartout-store-modal-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.chartout-store-modal-close {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.chartout-store-modal-close:hover {
+  color: #111827;
+}
+
+.chartout-store-modal-body {
+  background-color: #fff;
+  padding: 1rem;
 }

@@ -1,38 +1,66 @@
 ---
 title: Get Started
-description: Install ChartOut and turn your first chart into a product in minutes.
 ---
 
 import { ChartPreview, StorePreview } from '@/components/demo/javascript'
+import { Tab, Tabs } from '@/components/docs/Tabs'
 
-```python
-import altair as alt
-from altair.datasets import data
+This guide shows how to take an existing chart, open it in the ChartOut Store, and preview it on products. ChartOut works with your existing chart library, it doesn't replace it.
 
-source = data.movies.url
+If you have not installed yet, see [Python installation](/docs/python) or [JavaScript installation](/docs/javascript).
 
-chart = alt.Chart(source).mark_bar().encode(
-    alt.X("IMDB Rating:Q").bin(maxbins=20).scale(domain=[1, 10]),
-    alt.Y('count()'),
-    alt.Color("IMDB Rating:Q").bin(maxbins=20).scale(scheme='pinkyellowgreen')
-)
-chart
-```
+## 1. Start with a chart
+
+Use any supported chart library. The preview below uses an example Vega-Altair chart.
 
 <ChartPreview />
 
-```python
-import chartout
+## 2. Connect your chart
 
-store = chartout.Store(chart)
-store  # renders the widget inline in a notebook environment
-```
+How you connect depends on where your chart runs.
+
+<Tabs items={['Python', 'JavaScript']}>
+  <Tab value="Python">
+    Pass your chart to `chartout.Store`. In notebook environments, evaluating the Store object as the last expression displays the widget inline.
+
+    ```python
+    import chartout
+
+    store = chartout.Store(chart)
+    store  # renders the widget inline in a notebook environment
+    ```
+
+    See [Environments](/docs/python/environments) for host-specific notes and [Example usage](/docs/python/example-usage) for `Store`, `item`, and `Cart` patterns.
+  </Tab>
+  <Tab value="JavaScript">
+    Render your chart to an `<svg>`, create a ChartOut model, mount the widget, then call `openWithViz` to open the store.
+
+    ```tsx
+    import { createChartoutModel } from 'chartout'
+    import { ChartoutWidget } from 'chartout/react'
+    import { openWithViz } from 'chartout/store'
+
+    const model = createChartoutModel({})
+
+    <ChartoutWidget model={model} style={{ width: '100%' }} />
+
+    await openWithViz(model, svg, 'My chart title')
+    ```
+
+    See [Integrations](/docs/javascript/integrations) for React, Vue, Svelte, and vanilla JS mount patterns, and [Example usage](/docs/javascript/example-usage) for `openWithViz`, `openWithItem`, and `openWithCart`.
+  </Tab>
+</Tabs>
 
 <StorePreview />
 
-From there you can browse products, preview your chart, adjust placement, and check out.
+The store lets you browse products, adjust chart placement in the 3D preview, and complete checkout.
 
-## What's next
+<Callout type="info">
+The demo chart above includes an **Open in Store** action in the chart's **⋯** menu. Try it to launch the same store experience directly from the chart.
+</Callout>
 
-- **[Python](/docs/python)** — install the Python package and use ChartOut from Jupyter
+## Learn more
+
+- **[Python](/docs/python)** — installation, notebook environments, and the Python API
 - **[JavaScript](/docs/javascript)** — embed the widget in a web app
+- **[How it works](/docs/how-it-works)** — draft order, payment, and fulfilment flow

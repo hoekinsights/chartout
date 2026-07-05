@@ -113,7 +113,8 @@ import type { Placement } from 'chartout'
 
 const placement: Placement = {
   id: 'default',
-  content: pngBytes,  // Uint8Array from svgToBytes()
+  content: pngBytes,          // Uint8Array from svgToBytes()
+  position: { scale: 0.9 },   // optional initial alignment/scale/offset
 }
 ```
 
@@ -121,8 +122,9 @@ The supported _fields_ are:
 
 - _id_: Placement id from the [product catalogue](#products) (e.g. `"default"`).
 - _content_: `Uint8Array` PNG bytes, or a string URL in some internal flows.
+- _position_: Optional [`Position`](#position) for the initial alignment, scale, and offset of the content on this placement. Honored by [`openWithCart`](#openwithcart); the widget still lets the user adjust it afterwards.
 
-Look up valid ids and _print_ratio_ per product with [`products()`](#products). For alignment, use [`openWithItem`](#openwithitem) with a [`Position`](#position), or set `user_position` on the placement object when calling `model.set()` directly.
+Look up valid ids and _print_ratio_ per product with [`products()`](#products). Set _position_ to align a placement, or use [`openWithItem`](#openwithitem) with a [`Position`](#position) for a single pre-selected product.
 
 ---
 
@@ -153,7 +155,12 @@ The supported _fields_ are:
 - _scale_: Optional zoom factor (number).
 - _dx_, _dy_: Optional normalized offsets (number).
 
-Passed via _options.position_ on [`openWithItem`](#openwithitem). Omitted fields use the defaults above.
+There are two ways to apply a `Position`:
+
+- For a single pre-selected product, pass it as _options.position_ to [`openWithItem`](#openwithitem).
+- For cart items, set it on each [`Placement`](#placement)'s _position_ field; [`openWithCart`](#openwithcart) reads it per placement.
+
+Omitted fields use the defaults above.
 
 ---
 
@@ -173,7 +180,8 @@ const items: CartItem[] = [
     id: 'canvas_10x10',
     name: 'My Canvas (10″×10″)',
     quantity: 1,
-    placements: [{ id: 'default', content: bytes }],
+    // Optional position aligns/scales the content on the placement.
+    placements: [{ id: 'default', content: bytes, position: { scale: 0.8 } }],
   },
 ]
 
@@ -316,7 +324,7 @@ openWithCart(model, items, { view: 'cart', shippingLocation: { country: 'NL' } }
 The supported _parameters_ are:
 
 - _model_: [`ChartoutModel`](#chartoutmodel).
-- _items_: [`CartItem`](#cartitem)[] with PNG bytes in each placement's _content_.
+- _items_: [`CartItem`](#cartitem)[] with PNG bytes in each placement's _content_, and an optional [`Position`](#position) per placement's _position_ for initial alignment.
 - _options_: Optional [`OpenOptions`](#openoptions).
 
 Clears _active_item_ and sets _cart_ to the provided items.

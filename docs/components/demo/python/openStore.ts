@@ -26,10 +26,11 @@ export async function openStorePattern(sessionId: string, pattern: StorePattern,
         svgToBytes(svgs[1]),
         svgToBytes(svgs[2]),
       ])
+      // Per-placement `position.scale` mirrors the docs `scale=` on canvas (0.8) and mousepad (0.9).
       openWithCart(model, [
-        { id: 'canvas_10x10', name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes }] },
+        { id: 'canvas_10x10', name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvasBytes, position: { scale: 0.8 } }] },
         { id: 'mug_black_11oz', name: 'My Mug (11 oz)', quantity: 2, placements: [{ id: 'default', content: mugBytes }] },
-        { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes }] },
+        { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepadBytes, position: { scale: 0.9 } }] },
       ] satisfies CartItem[])
       break
     }

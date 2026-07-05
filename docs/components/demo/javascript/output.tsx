@@ -106,13 +106,13 @@ async function openStore(model: ChartoutModel, pattern: Pattern, svgs: SVGSVGEle
   if (pattern === 'vizlike') {
     await openWithViz(model, svgs[0], 'Old Faithful Eruptions')
   } else if (pattern === 'cartItem') {
-    await openWithItem(model, 'canvas_10x10', svgs[0], 'My Canvas (10″×10″)')
+    await openWithItem(model, 'canvas_10x10', svgs[0], 'My Canvas (10″×10″)', { position: { scale: 0.8 } })
   } else {
     const [canvas, mug, mousepad] = await rasteriseSvgs(svgs)
     openWithCart(model, [
-      { id: 'canvas_10x10',       name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvas }] },
+      { id: 'canvas_10x10',       name: 'My Canvas (10″×10″)', quantity: 1, placements: [{ id: 'default', content: canvas, position: { scale: 0.8 } }] },
       { id: 'mug_black_11oz',     name: 'My Mug (11 oz)',      quantity: 1, placements: [{ id: 'default', content: mug }] },
-      { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepad }] },
+      { id: 'mousepad_white_8x7', name: 'My Mousepad (8″×7″)', quantity: 2, placements: [{ id: 'default', content: mousepad, position: { scale: 0.9 } }] },
     ] satisfies CartItem[])
   }
 }
