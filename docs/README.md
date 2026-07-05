@@ -2,7 +2,7 @@
 
 **Print Your Insights, Anytime, Anywhere**
 
-> With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
+> With every purchase, ChartOut donates to NumFOCUS to support the open-source ecosystem behind your charts.
 
 **chartout** turns data visualisations into physical products, mugs, canvases, mousepads, and more.
 You pass an SVG chart; the widget lets the user preview it on a 3D product model, adjust the placement, and check out. This reference implementation shows how to embed the widget in a JavaScript application outside Jupyter.

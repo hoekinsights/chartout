@@ -4,7 +4,7 @@
 
 **Print Your Insights, Anytime, Anywhere**
 
-> With every purchase, we donate 10% to NumFOCUS to support open-source scientific software.
+> With every purchase, ChartOut donates to NumFOCUS to support the open-source ecosystem behind your charts.
 
 ChartOut turns data visualizations into beautiful, printed products. You create a chart, pick a product, and chartout handles everything from 3D preview to order fulfilment.
 
