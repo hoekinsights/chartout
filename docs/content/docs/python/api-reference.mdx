@@ -17,8 +17,6 @@ store = chartout.Store(chartout.item(...))
 store = chartout.Store(chartout.Cart([...]))
 ```
 
-**Supported charts.** Parameters named _content_ or an initial chart accept Altair charts, matplotlib or seaborn `Figure`, Plotly `Figure`, or pyobsplot `ObsplotWidget`. Charts are rasterised to PNG at 300 DPI. For static type checkers, `chartout.VizLike` is a type variable you can use in annotations; it is not a class you construct at runtime.
-
 ### On this page
 
 - [products](#products)
@@ -58,10 +56,6 @@ Each product has a stable `id`, a display `name`, and one or more `placements` (
 
 The live API is the source of truth; call `products()` to refresh this list if a product id is rejected.
 
-The supported _parameters_ are:
-
-- _store_: Optional API URL override. Defaults to `chartout.DEFAULT_STORE_URL` (`https://api.chartout.io/v1/products/`).
-
 ---
 
 ## item
@@ -90,7 +84,7 @@ The supported _parameters_ are:
 - _product_id_: Product id from `chartout.products()` (e.g. `"mug_black_11oz"`, `"canvas_10x10"`).
 - _content_: Supported chart or `bytes` / `bytearray` image data.
 - _name_: Display name in the widget. Defaults to `product_id`.
-- _quantity_: Line quantity (default `1`).
+- _quantity_: Number of items (default `1`).
 - _placement_id_: Placement id from the product catalogue (default `"default"`).
 - _position_: Optional [`PlacementPosition`](#placementposition) instance. Alternative to passing alignment kwargs directly.
 - _validate_: When `True` (default), checks `product_id` against the live catalogue. Set `False` to skip the API call when the id is already known.
