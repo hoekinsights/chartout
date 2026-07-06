@@ -5,6 +5,7 @@ import { StaticSvgRenderer } from './chartRenderers'
 import { ChartCell, StoreCell } from './NotebookOutput'
 import { openStorePattern, type StorePattern } from './openStore'
 import { getSessionModel, getSessionSvgs, setSessionSvgs, subscribeSessionSvgs } from './session'
+import { withBasePath } from '@/lib/basePath'
 
 export type ChartLibrary = 'altair' | 'vgplot' | 'matplotlib'
 
@@ -23,7 +24,7 @@ const PATTERN_CHARTS: Record<StorePattern, ChartName[]> = {
 // vgplot has no pre-rendered assets yet (support is planned); reuse the Altair SVGs.
 function assetSrc(library: ChartLibrary, chart: ChartName): string {
   const lib = library === 'vgplot' ? 'altair' : library
-  return `/charts/penguins-${lib}-${chart}.svg`
+  return withBasePath(`/charts/penguins-${lib}-${chart}.svg`)
 }
 
 type PythonChartOutputProps = {

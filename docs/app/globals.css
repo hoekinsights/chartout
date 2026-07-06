@@ -120,6 +120,78 @@ figure.shiki > div {
   max-width: 100%;
 }
 
+/* Journey ("chart → product") on the What is ChartOut page. Ported from chartout-web's
+   JourneySection; restyled with fumadocs --color-fd-* tokens since the docs have no
+   Tailwind. Component: components/docs/Journey.tsx. */
+.chartout-journey {
+  list-style: none;
+  margin: 1.75rem 0 2.25rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 768px) {
+  .chartout-journey {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+.chartout-journey__step {
+  margin: 0;
+  max-width: 28rem;
+}
+@media (min-width: 768px) {
+  .chartout-journey__step {
+    max-width: none;
+  }
+}
+.chartout-journey__frame {
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-fd-border);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(27 25 93 / 0.04),
+    0 8px 24px rgb(27 25 93 / 0.06);
+  overflow: hidden;
+}
+.chartout-journey__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.chartout-journey__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 1rem;
+  border-radius: 9999px;
+  background: var(--color-fd-primary);
+  color: var(--color-fd-primary-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.chartout-journey__title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+  color: var(--color-fd-foreground);
+}
+.chartout-journey__desc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--color-fd-muted-foreground);
+}
+
 /* Vega-Embed preview (Get Started): wide charts scroll horizontally. Keep the ⋯
    at the visible top-right (sticky) instead of the chart's far right edge. */
 .chartout-vega-preview {

@@ -2,26 +2,42 @@
 title: What is ChartOut?
 ---
 
-**ChartOut** converts data visualizations into print ready products such as mugs, canvases, posters, and mousepads. Pass it a chart, and the embedded widget lets users preview it on a realistic 3D product, adjust its placement, and complete their purchase.
+import { Journey } from '@/components/docs/Journey'
 
-## Highlights
+ChartOut adds a print store to your notebook or web application.
 
-### 1. Aims to work with many chart libraries
+Pass it a chart, and ChartOut opens an embedded store where users can preview their visualization on real products, adjust its placement, and complete their purchase. Products are printed on demand and shipped worldwide.
 
-ChartOut aims to support many chart libraries, with different coverage on each side.
+<Journey />
 
-**Python.** Altair and matplotlib are officially supported today. Support for vgplot, pyobsplot, and Plotly is planned.
+## Works with popular chart libraries
 
-**JavaScript.** Observable Plot and ECharts are officially supported. Other libraries that render an SVG element may already work when you pass the SVG to the `openWith*` helpers.
+ChartOut is designed to support a wide range of visualization libraries across Python and JavaScript.
 
-### 2. Flexible integration patterns
+### Python
 
-Let users choose a product, preselect one for them, or build the entire shopping cart ahead of time.
+- Vega-Altair
+- Matplotlib
 
-### 3. Real time 3D preview
+Planned support includes vgplot, pyobsplot, and Plotly.
 
-Interactive 3D product previews with fine grained placement controls.
+### JavaScript
 
-### 4. Ships worldwide
+- Observable Plot
+- ECharts
 
-Products are printed on demand and delivered to most countries worldwide.
+Libraries that render SVG output may also work by passing the SVG element to the `openWith*` helpers.
+
+## Flexible integration
+
+- Let users browse and select a product.
+- Preselect a product before opening the store.
+- Build an entire shopping cart ahead of time.
+
+## Interactive 3D previews
+
+Users can preview their chart on realistic 3D product models before purchasing, with fine-grained controls for positioning and scaling.
+
+## Worldwide fulfillment
+
+Products are printed on demand and shipped to most countries worldwide.

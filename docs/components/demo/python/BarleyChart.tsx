@@ -11,7 +11,7 @@ const EMBED_OPTIONS = {
 // Spec is compiled from the Python source shown above it in environments.mdx.
 export function BarleyChart() {
   return (
-    <div className="not-prose my-6">
+    <div className="not-prose chartout-vega-preview my-6">
       <VegaEmbed spec={spec as never} options={EMBED_OPTIONS} />
     </div>
   )

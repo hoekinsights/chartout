@@ -72,13 +72,6 @@ The npm package also supports Vue, Svelte, and vanilla JS via `chartout/mount`. 
 
 For architecture and design notes, see [How it works](https://hoekinsights.github.io/chartout/docs/how-it-works) in the docs.
 
-## Repository layout
-
-| Path | Description |
-|------|-------------|
-| [`python/`](python/) | Python package published to [PyPI](https://pypi.org/project/chartout/) |
-| [`docs/`](docs/) | Documentation site (Next.js); also the source for the [`chartout` npm package](https://www.npmjs.com/package/chartout) |
-
 ## Development
 
 This repo uses [Pixi](https://pixi.sh) for local development:
