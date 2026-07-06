@@ -1,8 +1,8 @@
-// The site is served under a basePath in production (see next.config.ts). Next only
-// auto-applies that prefix to next/image and next/link, NOT to raw fetch() calls or
-// plain <img> tags referencing /public assets. Use withBasePath() for those so they
-// resolve in both dev (basePath '') and production (basePath '/chartout').
-export const BASE_PATH = process.env.NODE_ENV === 'production' ? '/chartout' : ''
+// Prefix for raw fetch() calls and plain <img> tags referencing /public assets, which
+// Next does NOT auto-prefix (unlike next/image and next/link). The site now serves at the
+// root of docs.chartout.io, so this is empty. Keep it in sync with basePath in
+// next.config.ts: if the site ever moves back under a path prefix, set both.
+export const BASE_PATH = ''
 
 export function withBasePath(path: string): string {
   return path.startsWith('/') ? `${BASE_PATH}${path}` : path
