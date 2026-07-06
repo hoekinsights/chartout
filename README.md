@@ -6,7 +6,7 @@
 
 **ChartOut** converts data visualizations into print-ready products. Pass it a chart, and the embedded widget lets users preview it on a realistic 3D product, adjust placement, and complete checkout.
 
-**Documentation:** [hoekinsights.github.io/chartout/docs](https://hoekinsights.github.io/chartout/docs)
+**Documentation:** [https://docs.chartout.io](https://docs.chartout.io)
 
 ## Highlights
 
