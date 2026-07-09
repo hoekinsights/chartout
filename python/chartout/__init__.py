@@ -1,4 +1,4 @@
-__version__ = "1.0.0b1"
+__version__ = "1.0.0"
 
 from .models import CartItem, Horizontal, Placement, PlacementPosition, Vertical
 from .store import DEFAULT_STORE_URL, products, Store, StoreView, Theme
