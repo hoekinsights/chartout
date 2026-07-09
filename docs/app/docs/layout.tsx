@@ -6,6 +6,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <DocsLayout
       tree={source.pageTree}
+      githubUrl="https://github.com/hoekinsights/chartout"
+      themeSwitch={{ enabled: false }}
       sidebar={{ defaultOpenLevel: Infinity }}
       nav={{
         // Point the logo at /docs, not "/". The root route is a server redirect with no

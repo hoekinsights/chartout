@@ -11,7 +11,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Banner>
           ChartOut is in beta. Give it a try, and let me know what you think.
         </Banner>
-        <RootProvider search={{ enabled: false }}>{children}</RootProvider>
+        <RootProvider
+          search={{ enabled: false }}
+          theme={{ defaultTheme: 'light', forcedTheme: 'light', enableSystem: false }}
+        >
+          {children}
+        </RootProvider>
       </body>
     </html>
   )
