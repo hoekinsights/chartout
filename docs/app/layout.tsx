@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <span>
             ChartOut is in beta. Give it a try, and let me know what you think by{' '}
             <a
-              href="https://github.com/hoekinsights/chartout/issues"
+              href="https://github.com/hoekinsights/chartout/issues/new"
               target="_blank"
               rel="noopener noreferrer"
               className="underline font-medium"
