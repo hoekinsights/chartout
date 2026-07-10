@@ -9,7 +9,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <Banner>
-          ChartOut is in beta. Give it a try, and let me know what you think.
+          <span>
+            ChartOut is in beta. Give it a try, and let me know what you think by{' '}
+            <a
+              href="https://github.com/hoekinsights/chartout/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium"
+            >
+              opening a GitHub issue
+            </a>
+            .
+          </span>
         </Banner>
         <RootProvider
           search={{ enabled: false }}
