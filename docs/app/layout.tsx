@@ -10,14 +10,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <Banner>
           <span>
-            ChartOut is in beta. Give it a try, and let me know what you think by{' '}
+            ChartOut is in beta. I&apos;d love your feedback, open a{' '}
             <a
               href="https://github.com/hoekinsights/chartout/issues/new"
               target="_blank"
               rel="noopener noreferrer"
               className="underline font-medium"
             >
-              opening a GitHub issue
+              GitHub issue
+            </a>{' '}
+            or email{' '}
+            <a href="mailto:info@chartout.io" className="underline font-medium">
+              info@chartout.io
             </a>
             .
           </span>
